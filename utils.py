@@ -6,18 +6,38 @@ from langchain_community.vectorstores.chroma import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
+import torch
+import weaviate
+
 # local imports
 import settings
 
-
-def create_vectordb_name(content_folder_name, chunk_size=None, chunk_overlap=None):
+def create_vectordb_name(content_folder_name, chunk_size=None, chunk_overlap=None, embeddings_type=None, embeddings_model=None, vecdb_type=None, added_context=None, splitting_method=None):
+    # FORMAT OF VECTORDB NAME: VECDB_TYPE_chunk_size_chunk_overlap_EMBEDDINGS_PROVIDER_EMBEDDINGS_MODEL_ADDED_CONTEXT_EMBEDDINGSTYPE_VECDB_TYPE_SPLITTING_METHOD
+    templateVectorname = "VECDBTYPE_chunksize_chunkoverlap_EMBEDDINGS_PROVIDER_EMBEDDINGS_MODEL_ADDED_CONTEXT_EMBEDDINGSTYPE_VECDB_TYPE_SPLITTING_METHOD"
     content_folder_path = os.path.join(settings.DOC_DIR, content_folder_name)
-    # vectordb_name is created from vecdb_type, chunk_size, chunk_overlap, embeddings_type 
+    
+    templateVectorname = templateVectorname.replace("VECDBTYPE", settings.VECDB_TYPE)
     if chunk_size:
-        vectordb_name = "_" + settings.VECDB_TYPE + "_" + str(chunk_size) + "_" + str(chunk_overlap) + "_" + settings.EMBEDDINGS_PROVIDER + "_" + settings.EMBEDDINGS_MODEL
+        templateVectorname = templateVectorname.replace("chunksize", str(chunk_size))
     else:
-        vectordb_name = "_" + settings.VECDB_TYPE + "_" + str(settings.CHUNK_SIZE) + "_" + str(settings.CHUNK_OVERLAP) + "_" + settings.EMBEDDINGS_PROVIDER + "_" + settings.EMBEDDINGS_MODEL
-    vectordb_folder_path = os.path.join(settings.VECDB_DIR, content_folder_name) + vectordb_name 
+        templateVectorname = templateVectorname.replace("chunksize", str(settings.CHUNK_SIZE))
+    templateVectorname = templateVectorname.replace("chunkoverlap", str(chunk_overlap))
+    templateVectorname = templateVectorname.replace("EMBEDDINGS_PROVIDER", settings.EMBEDDINGS_PROVIDER)
+    if embeddings_model is None:
+        embeddings_model = settings.EMBEDDINGS_MODEL
+    embeddings_model = embeddings_model.replace("/", "-")
+    templateVectorname = templateVectorname.replace("EMBEDDINGS_MODEL", str(embeddings_model))
+    templateVectorname = templateVectorname.replace("ADDED_CONTEXT", str(added_context))
+    templateVectorname = templateVectorname.replace("EMBEDDINGSTYPE", str(embeddings_type))
+    if splitting_method is None:
+        splitting_method = "None"
+    else:
+        splitting_method = str(splitting_method)
+    splitting_method = splitting_method.replace(".", "-")
+    templateVectorname = templateVectorname.replace("SPLITTING_METHOD", str(splitting_method))
+    vectordb_folder_path = os.path.join(settings.VECDB_DIR, content_folder_name) + templateVectorname 
+    
     return content_folder_path, vectordb_folder_path
 
 
@@ -35,13 +55,21 @@ def getattr_or_default(obj, attr, default=None):
     return value if value is not None else default
 
 
-def get_chroma_vector_store(collection_name, embeddings, vectordb_folder):
-    vector_store = Chroma(
-        collection_name=collection_name,
-        embedding_function=embeddings,
-        persist_directory=vectordb_folder,
-        collection_metadata={"hnsw:space": "cosine"}
-    )
+def get_chroma_vector_store(collection_name, embeddings, vectordb_folder) -> Chroma:
+    
+    if settings.VECDB_TYPE == "chromadb":
+        vector_store = Chroma(
+            collection_name=collection_name,
+            embedding_function=embeddings,
+            persist_directory=vectordb_folder,
+            collection_metadata={"hnsw:space": "cosine"}
+        )
+    # if settings.VECDB_TYPE == "weaviate":
+        # vector_store = Weaviate(
+        #     collection_name=collection_name,
+        #     embedding_function=embeddings,
+        #     persist_directory=vectordb_folder,
+        #     collection_metadata={"hnsw:space": "cosine"}
     return vector_store
 
 
@@ -82,9 +110,16 @@ def getEmbeddings(embeddings_provider, embeddings_model, local_api_url, azureope
         embeddings = HuggingFaceEmbeddings(model_name=embeddings_model)
     elif embeddings_provider == "local_embeddings":
         model_name = embeddings_model
-        model_kwargs = {'device': 'cpu'}
+        if torch.backends.mps.is_available():
+            model_kwargs = {'device': 'mps'}
+        elif torch.cuda.is_available():
+            model_kwargs = {'device': 'cuda'}
+        else:
+            model_kwargs = {'device': 'cpu'}
+        model_kwargs["trust_remote_code"] = True
         encode_kwargs = {'normalize_embeddings': False}
         embeddings = HuggingFaceEmbeddings(
+            
             model_name=model_name,
             model_kwargs=model_kwargs,
             encode_kwargs=encode_kwargs )
@@ -104,9 +139,12 @@ def get_timestamp():
     return str(dt.datetime.now())
 
 
-def get_content_folder_name() -> str:
+def get_content_folder_name(docdiroveride = None) -> str:
     '''Select a folder from the DOC_DIR to work with.'''
-    path = settings.DOC_DIR
+    if docdiroveride is None:
+        path = settings.DOC_DIR
+    elif docdiroveride is not None:
+        path = docdiroveride
     content_folder_names = [folder for folder in os.listdir(path) if os.path.isdir(os.path.join(path, folder))]
     print(f"Available folders in {path}:")
     for idx, folder in enumerate(content_folder_names, start=1):
