@@ -145,6 +145,7 @@ def infer():
     app.logger.info(f"IP address: {request.remote_addr}")
     app.logger.info(f"Data recived: {data}")
     _range = range
+    fetchedFiles = []
     if data is None:
         app.logger.error("No data provided")
         return jsonify({"error": "No data provided"})
@@ -161,7 +162,6 @@ def infer():
         embeddings = Embedding()
         database = Database(embed=embeddings, range=_range)
         files = data['files']
-        fetchedFiles = []
         print(f"Files: {files}")
         for file in files:
             print(f"File: {file}")
