@@ -168,9 +168,9 @@ def infer():
             print(f"uuid {file.get('uuid')}")
             database.get_database_connection()
             # get answer from database
-            fetchedData = database.getQuestion(file.get('uuid'), file.get('question_number'))
+            fetchedData = database.getQuestion(file.get('uuid'), file.get('questionNumber'))
             fetchedFiles.append(fetchedData)
-            
+            print(f"for file: {file.get('uuid')} question number: {file.get('questionNumber')} fetched data: {fetchedData}")
         print(f"Question and answer: {fetchedFiles}")
         app.logger.info(f"Question and answer: {fetchedFiles}")
     app.logger.info(f"Prompt: {data['prompt']}")
