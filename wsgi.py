@@ -1,16 +1,11 @@
 from enum import Enum
 import logging
-from logging.config import dictConfig
 from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, make_response, request
 
 from DataFetcher.libraries.data_classes.range_enum import Range
-from DataFetcher.run_local import run_local_datafetcher
-from ingester.libraries.database import Database
-from ingester.libraries.embedding import Embedding
 from modules.kamervragen import KamerVragen
 from querier.run_local import getDocumentBlobFromDatabase, run_local_query_stores
-from ingester.run_local import run_local_ingest_stores
 from inference.run_local import infer_run_local
 from flask_cors import CORS, cross_origin
 

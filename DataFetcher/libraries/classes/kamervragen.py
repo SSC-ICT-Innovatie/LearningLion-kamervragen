@@ -2,7 +2,6 @@ import csv
 import json
 import os
 from threading import Thread
-import threading
 import requests
 # from data_classes.range_enum import Range
 # from interface.dataSource import dataSource
@@ -57,23 +56,23 @@ class KamerVragen(dataSource):
                         thread.start()
                         self.threads.append(thread)
                 for rawItem in rawData['value']:
-                    if(self.limitDisabled == False and len(self.dataitems) >= self.limit):
+                    if(self.limitDisabled is False and len(self.dataitems) >= self.limit):
                         break
                     dataitem = self._fetchKamerVragenData(rawItem)
-                    if(dataitem == None):
+                    if(dataitem is None):
                         continue
                     self.dataitems.append(dataitem)
                     print(f"Total items: {len(self.dataitems)}")
                 # if max threads is reached, fetch the next page in the main thread
                 if self.limitDisabled or len(self.dataitems) < self.limit:
-                    if(thread == None and rawData.get('@odata.nextLink')):
+                    if(thread is None and rawData.get('@odata.nextLink')):
                         self._fetchDataPagenated(rawData.get('@odata.nextLink'))
             
 
                     
     def _fetchKamerVragenData(self, rawData, downloadFile = True, path=None):
         """Construct a KamerVragenData object from the raw data"""
-        if(self.limitDisabled == False and len(self.dataitems) > self.limit):
+        if(self.limitDisabled is False and len(self.dataitems) > self.limit):
             return
         dataitem = KamerVragenData(rawData['Id'], rawData['GewijzigdOp'], rawData['Verwijderd'], rawData['Datum'], rawData['Soort'])
         if downloadFile:
@@ -102,14 +101,14 @@ class KamerVragen(dataSource):
                 self.dataitems.append(dataitem)
                 print(f"Added item {dataitem.id}")
                 print(f"Total items: {len(self.dataitems)}")
-                if(self.limitDisabled == False or len(self.dataitems) >= self.limit):
+                if(self.limitDisabled is False or len(self.dataitems) >= self.limit):
                     break
             print(f"Total items: {len(self.dataitems)}")
             print(f"Limit: {self.limit}")
             print(f"Limit disabled: {self.limitDisabled}")
             # if max threads is reached, fetch the next page in the main thread
             if self.limitDisabled or len(self.dataitems) < self.limit:
-                if(thread == None and rawData.get('@odata.nextLink')):
+                if(thread is None and rawData.get('@odata.nextLink')):
                     self._fetchDataPagenated(rawData.get('@odata.nextLink'))
             
         return self.dataitems
@@ -118,11 +117,11 @@ class KamerVragen(dataSource):
         """Download a single file from the API"""
         sidecar_csv = "metadata.csv"
         
-        if path == None:
-            if(os.path.exists(self.targetfolder) == False):
+        if path is None:
+            if(os.path.exists(self.targetfolder) is False):
                 os.mkdir(self.targetfolder)
         else:
-            if(os.path.exists(path) == False):
+            if(os.path.exists(path) is False):
                 os.makedirs(path)
         
         url = self.downloadurlTemplate.format(fileId)
@@ -138,7 +137,7 @@ class KamerVragen(dataSource):
                 filename = f"{fileId}{extension}"
             else:
                 filename = f"{fileId}"
-            if path == None:
+            if path is None:
                 filename = os.path.join(self.targetfolder, filename)
             else:
                 filename = os.path.join(path, filename)
@@ -255,11 +254,11 @@ class KamerVragen(dataSource):
                     if self.soorten.get(dataitem.soort) is None:
                         self.soorten[dataitem.soort] = 1
                         if downloadFiles or (downloadTypes and dataitem.soort in downloadTypes):
-                            self.fetchFile(dataitem.id, "{}/".format(self.targetfolder) + (dataitem.soort.replace("/", "-") if baseURL == None else baseURL))
+                            self.fetchFile(dataitem.id, "{}/".format(self.targetfolder) + (dataitem.soort.replace("/", "-") if baseURL is None else baseURL))
                     else:
                         self.soorten[dataitem.soort] += 1
                     if (downloadTypes and dataitem.soort in downloadTypes):
-                            self.fetchFile(dataitem.id, "{}/".format(self.targetfolder) + (dataitem.soort.replace("/", "-") if baseURL == None else baseURL))
+                            self.fetchFile(dataitem.id, "{}/".format(self.targetfolder) + (dataitem.soort.replace("/", "-") if baseURL is None else baseURL))
 
                 url = rawData.get('@odata.nextLink')
                 pagenumber += 1

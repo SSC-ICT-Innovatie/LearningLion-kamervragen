@@ -1,4 +1,3 @@
-import torch
 from inference.libraries.infere import Infer
 
 inference_Global = None

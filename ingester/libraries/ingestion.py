@@ -1,23 +1,16 @@
-import json
-from sqlite3 import Connection
 import traceback
 import zipfile
 import pymupdf
 import pymupdf4llm
-import requests
-import ubiops
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 import os
-from pypdf import PdfReader
 from langchain.retrievers import BM25Retriever
 
 from ingester.libraries.database import Database
 from ingester.libraries.preprocessor import Preprocessor
 from ingester.libraries.ubiops_helper import UbiopsHelper
-import sqlite3
-import datetime
 # from preprocessor import Preprocessor
 # from ubiops_helper import UbiopsHelper
 
@@ -32,7 +25,7 @@ class Ingestion:
         try:
             self.ingest()
             return True
-        except:
+        except Exception:
             return False
         
     def getTextSplitter(self):
@@ -89,7 +82,7 @@ class Ingestion:
 
     def ingest(self, source_dir=None, vector_store:Chroma|None=None, embeddings=None, database:Database|None =None):
         vector_store = vector_store
-        text_splitter = self.getTextSplitter()
+        # text_splitter = self.getTextSplitter()
         embeddings = embeddings
         sourceDir = source_dir if source_dir else "ubiops-file://default"
         if "ubiops-file://" in sourceDir:

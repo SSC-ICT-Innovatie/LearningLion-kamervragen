@@ -1,4 +1,3 @@
-import json
 import os
 import torch
 from transformers import pipeline

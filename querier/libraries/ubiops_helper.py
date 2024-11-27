@@ -58,7 +58,7 @@ class UbiopsHelper:
         configuration.host = "https://api.ubiops.com/v2.1"
 
         api_client = ubiops.ApiClient(configuration)
-        core_api = ubiops.CoreApi(api_client)
+        # core_api = ubiops.CoreApi(api_client)
 
         try:
             if(filename.endswith("/")):
