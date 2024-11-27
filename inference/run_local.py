@@ -10,11 +10,12 @@ def infer_run_local(prompt,
                     systemPrompt=None, 
                     generation_kwargs=None):
   global inference_Global
-  if inference_Global is None:
-    inference_Global = Infer(LLM)
-  # Models that dont require a GPU or are needed to exclude the device tag
   gpuBanlist = ["PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed","PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed"]
-  
+  if inference_Global is None or inference_Global.llm != LLM:
+    if LLM in gpuBanlist:
+      inference_Global = Infer(LLM, exclude_device=True)
+  # Models that dont require a GPU or are needed to exclude the device tag
+
   device = "cpu"
   if not torch.cuda.is_available():
     device = "cpu"
