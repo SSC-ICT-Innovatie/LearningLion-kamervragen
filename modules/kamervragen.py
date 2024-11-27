@@ -23,9 +23,9 @@ class KamerVragen:
         return jsonify({"error": str(e)})
       
   def inference(app, data, defaultRange=Range.Tiny, model="BramVanroy/fietje-2-chat", systemPrompt=None): 
-    files = []
+    files = None
     _range = defaultRange
-    fetchedFiles = []
+    fetchedFiles = None
     if "range" in data:
       if data["range"] not in Range.__members__:
           return jsonify({"error": "Invalid range"})
@@ -36,16 +36,16 @@ class KamerVragen:
       database = Database(embed=embeddings, range=_range)
       files = data['files']
       print(f"Files: {files}")
-    for file in files:
-        print(f"File: {file}")
-        print(f"uuid {file.get('uuid')}")
-        database.get_database_connection()
-        # get answer from database
-        fetchedData = database.getQuestion(file.get('uuid'), file.get('questionNumber'))
-        fetchedFiles.append(fetchedData)
-        print(f"for file: {file.get('uuid')} question number: {file.get('questionNumber')} fetched data: {fetchedData}")
-    print(f"Question and answer: {fetchedFiles}")
-    app.logger.info(f"Question and answer: {fetchedFiles}")
+      for file in files:
+          print(f"File: {file}")
+          print(f"uuid {file.get('uuid')}")
+          database.get_database_connection()
+          # get answer from database
+          fetchedData = database.getQuestion(file.get('uuid'), file.get('questionNumber'))
+          fetchedFiles.append(fetchedData)
+          print(f"for file: {file.get('uuid')} question number: {file.get('questionNumber')} fetched data: {fetchedData}")
+      print(f"Question and answer: {fetchedFiles}")
+      app.logger.info(f"Question and answer: {fetchedFiles}")
     app.logger.info(f"Prompt: {data['prompt']}")
     AIresponse = infer_run_local(data["prompt"], files=fetchedFiles, LLM=model, systemPrompt=systemPrompt)
     app.logger.info(f"AI response: {AIresponse}")
