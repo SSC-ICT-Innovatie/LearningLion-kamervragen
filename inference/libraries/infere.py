@@ -48,8 +48,9 @@ class Infer:
 		# Add the latest user prompt to the conversation
 		conversation.append({"role": "user", "content": prompt})
 		# Include any files if provided
-		if files is not None or len(files) > 0:
-			conversation.append({"role": "system", "content": f"Relevante bestanden:\n{files}"})
+		if files is not None:
+			if len(files) > 0:
+				conversation.append({"role": "system", "content": f"Relevante bestanden:\n{files}"})
 		# Add custom markers as special tokens
 		self.generator.tokenizer.add_special_tokens({
 			'additional_special_tokens': ['<|im_start|>', '<|im_end|>']
