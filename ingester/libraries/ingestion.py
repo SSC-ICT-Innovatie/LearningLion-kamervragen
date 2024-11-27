@@ -87,7 +87,7 @@ class Ingestion:
         # TODO: Implement summarization
         return "Summarized text"
 
-    def ingest(self, source_dir=None, vector_store=None, embeddings=None, database:Database|None =None):
+    def ingest(self, source_dir=None, vector_store:Chroma|None=None, embeddings=None, database:Database|None =None):
         vector_store = vector_store
         text_splitter = self.getTextSplitter()
         embeddings = embeddings
