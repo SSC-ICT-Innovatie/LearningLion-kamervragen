@@ -64,9 +64,9 @@ class Infer:
 			add_generation_prompt=True,
 		)
 		base_generate_kwargs = {
-				"do_sample": False,
+				"do_sample": True,
 				"temperature": 1.0,
-				"max_new_tokens": 500,
+				"max_new_tokens": 10000,
 			}
 		generate_kwargs = base_generate_kwargs
 		if generation_kwargs is not None:
