@@ -22,7 +22,7 @@ class KamerVragen:
     except Exception as e:
         return jsonify({"error": str(e)})
       
-  def inference(app, data, defaultRange=Range.Tiny, model="BramVanroy/fietje-2-chat"):
+  def inference(app, data, defaultRange=Range.Tiny, model="BramVanroy/fietje-2-chat", systemPrompt=None): 
     files = []
     _range = defaultRange
     fetchedFiles = []
@@ -47,7 +47,7 @@ class KamerVragen:
     print(f"Question and answer: {fetchedFiles}")
     app.logger.info(f"Question and answer: {fetchedFiles}")
     app.logger.info(f"Prompt: {data['prompt']}")
-    AIresponse = infer_run_local(data["prompt"], files=fetchedFiles, LLM=model)
+    AIresponse = infer_run_local(data["prompt"], files=fetchedFiles, LLM=model, systemPrompt=systemPrompt)
     app.logger.info(f"AI response: {AIresponse}")
     return jsonify({
       "prompt": data["prompt"],

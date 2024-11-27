@@ -190,9 +190,11 @@ def infer():
         else:
             print(f"Invalid model: {data['model']}")
             return jsonify({"error": "Invalid model"})
-        
+    systemPrompt = None
+    if "systemPrompt" in data:
+        systemPrompt = data["systemPrompt"]
     if specialty == "KamerVragen":
-        return KamerVragen.inference(app, data, model=model)
+        return KamerVragen.inference(app, data, model=model, systemPrompt=systemPrompt)
     else:
         return {
             "prompt": data["prompt"],
