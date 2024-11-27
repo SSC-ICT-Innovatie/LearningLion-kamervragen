@@ -71,17 +71,10 @@ class Infer:
 		if generation_kwargs is not None:
 			generate_kwargs = {**base_generate_kwargs, **generation_kwargs}
 			print(generate_kwargs)
-		device = "cpu"
-		if not torch.cuda.is_available():
-			device = "cpu"
-		if torch.backends.mps.is_available():
-			device = "mps"
-		if torch.cuda.is_available():
-			device = "cuda"
 
 		
 		# Pass the text directly to the generator
-		response = self.generator(text, **generate_kwargs, device=device)
+		response = self.generator(text, **generate_kwargs)
 		response = response[0]["generated_text"]
 		response = response.replace(text,"")
   
