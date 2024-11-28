@@ -186,7 +186,6 @@ class Ingestion:
             try:
                 vector_store.add_documents(
                     documents=doc_batch,
-                    embedding=embeddings,
                 )
             except Exception as e:
                 print(f"Error adding batch {batch_count} to vector store:")
