@@ -7,7 +7,8 @@ def infer_run_local(prompt,
                     files=None, 
                     LLM="BramVanroy/fietje-2-chat", 
                     systemPrompt=None, 
-                    generation_kwargs=None):
+                    generation_kwargs=None,
+                    filename=None):
   global inference_Global
   gpuBanlist = ["PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed","PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed"]
   
@@ -15,7 +16,7 @@ def infer_run_local(prompt,
     if LLM in gpuBanlist:
       inference_Global = Infer(LLM, exclude_device=True)
     else:
-      inference_Global = Infer(LLM)
+      inference_Global = Infer(LLM, filename=filename)
   
   return inference_Global.predict(prompt, chatlog, files, systemPrompt, generation_kwargs)
 
