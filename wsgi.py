@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, make_response, request
 
 from DataFetcher.libraries.data_classes.range_enum import Range
-from modules.kamervragen import KamerVragen
+from modules.kamervragen import KamerVragenModule
 from querier.run_local import getDocumentBlobFromDatabase, run_local_query_stores
 from inference.run_local import infer_run_local
 from flask_cors import CORS, cross_origin
@@ -98,7 +98,7 @@ def init():
     if doesSpecialtyExist(data["specialty"]) is False:
         return jsonify({"error": "Invalid specialty"})
     if data["specialty"] == "KamerVragen":
-        return KamerVragen.initialize(app, data)
+        return KamerVragenModule.initialize(app, data)
     return False
 
 @app.route('/prompt', methods=['POST'])
@@ -158,7 +158,7 @@ def query():
     if doesSpecialtyExist(data["specialty"]) is False:
         return jsonify({"error": "Invalid specialty"})
     if data["specialty"] == "KamerVragen":
-        return KamerVragen.query(app, data)
+        return KamerVragenModule.query(app, data)
     
 @app.route('/llm', methods=['POST'])
 @cross_origin()
@@ -189,7 +189,7 @@ def infer():
     if "systemPrompt" in data:
         systemPrompt = data["systemPrompt"]
     if specialty == "KamerVragen":
-        return KamerVragen.inference(app, data, model=model, systemPrompt=systemPrompt)
+        return KamerVragenModule.inference(app, data, model=model, systemPrompt=systemPrompt)
     else:
         return {
             "prompt": data["prompt"],

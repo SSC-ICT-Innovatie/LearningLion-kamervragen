@@ -8,7 +8,7 @@ from ingester.run_local import run_local_ingest_stores
 from querier.run_local import run_local_query_stores
 
 
-class KamerVragen:
+class KamerVragenModule:
   def initialize(app, data):
     try:
       range = Range.Tiny
