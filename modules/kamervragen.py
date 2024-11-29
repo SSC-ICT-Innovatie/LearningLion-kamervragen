@@ -23,9 +23,9 @@ class KamerVragen:
         return jsonify({"error": str(e)})
       
   def inference(app, data, defaultRange=Range.Tiny, model="BramVanroy/fietje-2-chat", systemPrompt=None): 
-    files = None
+    files = []
     _range = defaultRange
-    fetchedFiles = None
+    fetchedFiles = []
     if "range" in data:
       if data["range"] not in Range.__members__:
           return jsonify({"error": "Invalid range"})
@@ -42,6 +42,7 @@ class KamerVragen:
           database.get_database_connection()
           # get answer from database
           fetchedData = database.getQuestion(file.get('uuid'), file.get('questionNumber'))
+          print(f"for file: {file.get('uuid')} question number: {file.get('questionNumber')} fetched data: {fetchedData}")
           fetchedFiles.append(fetchedData)
           print(f"for file: {file.get('uuid')} question number: {file.get('questionNumber')} fetched data: {fetchedData}")
       print(f"Question and answer: {fetchedFiles}")

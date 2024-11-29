@@ -15,7 +15,7 @@ from DataFetcher.libraries.data_classes.kamerVragenData import KamerVragenData
 from DataFetcher.libraries.data_classes.range_enum import Range
 from DataFetcher.libraries.interface import dataSource
 
-class KamerVragen(dataSource):
+class KamerVragen:
     url = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0/Document?$filter=Verwijderd eq false and Soort eq 'Antwoord schriftelijke vragen'"
     urlLIMITED = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0/Document?$filter=Verwijderd eq false and Soort eq 'Antwoord schriftelijke vragen' and (year(DatumRegistratie) eq 2024 and month(DatumRegistratie) ge 1 and day(DatumRegistratie) ge 1) and (year(DatumRegistratie) eq 2024 and month(DatumRegistratie) lt 9)"
     urlLIMITEDFirst = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0/Document?$filter=Verwijderd eq false and Soort eq 'Antwoord schriftelijke vragen' and (year(DatumRegistratie) eq 2022 and month(DatumRegistratie) ge 1 and day(DatumRegistratie) ge 1) and (year(DatumRegistratie) lt 2024)"

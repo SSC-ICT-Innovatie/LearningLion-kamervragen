@@ -5,19 +5,22 @@ from transformers import pipeline
 from transformers import BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from llama_cpp import Llama
+from huggingface_hub import snapshot_download
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 class Infer:
 	systemPrompt = """Je bent een vriendelijke chatbot genaamd Learning Lion. Je wilt altijd graag vragen beantwoorden en blijft altijd vriendelijk. Alle informatie die jij verteld komt uit de bestanden die zijn bijgevoegd, mochten de bestanden niet bestaan of onvoldoende informatie bevatten dan zeg je 'ik weet het niet' of 'ik kan je niet helpen'."""
 	llm = None
 	downloadDest="./temp_model"
-	def __init__(self, model_name_or_path, filename="model.guff", exclude_device=False,device_map="auto", args=None):
+	def __init__(self, model_name_or_path, filename="model.guff", exclude_device=False,device_map="auto", no_quantized=False, args=None):
 		self.model_name_or_path = model_name_or_path
 		self.device_map = device_map
-		self.is_quantized = self._detect_quantization()
+		self.is_quantized = False
 		self.tokenizer = None
 		self.model = None
 		self.filename = filename
+		self.no_quantized = no_quantized
 		self.load_model()
    
 		# args = args or {}
@@ -49,7 +52,7 @@ class Infer:
 				for file in model_data.get("siblings", []):
 						if filename in file["rfilename"]:  # Check for GGUF file
 								return f"https://huggingface.co/{repo_id}/resolve/main/{file['rfilename']}"
-		return None
+		raise ValueError(f"Failed to find GGUF file '{filename}' in repository '{repo_id}'.")
 	def download_model(self, url, save_path,filename="model.gguf"):
 		"""
 		Download a GGUF model from a URL.
@@ -76,19 +79,21 @@ class Infer:
 
 	def load_model(self):
 		if "GGUF" in self.model_name_or_path:
-			print("The string contains 'GGUF'.")		
+			print("The string contains 'GGUF'.")
 			self.load_model_gguf()
 			return
 		# Ensure the model is downloaded or accessible locally
 		local_path = self._ensure_model_downloaded()
 		print(local_path)
 		# Detect quantization
-		self.is_quantized = self._detect_quantization(local_path)
-		if self.is_quantized:
+		self.is_quantized = self._detect_quantization()
+		if self.is_quantized and not self.no_quantized:
 			# Configure BitsAndBytes for quantization
 			bnb_config = BitsAndBytesConfig(
 					load_in_8bit=True,  # Adjust to False for 4-bit if needed
 			)
+			print("Model is quantized")
+			print("Setting model")
 			self.model = AutoModelForCausalLM.from_pretrained(
 					self.model_name_or_path,
 					quantization_config=bnb_config,
@@ -96,29 +101,33 @@ class Infer:
 			)
 		else:
 			# Load a non-quantized model
+			print("Setting model")
 			self.model = AutoModelForCausalLM.from_pretrained(
 					self.model_name_or_path,
 					device_map=self.device_map,
 			)
 
-			# Load the tokenizer
-			self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
+		# Load the tokenizer
+		print("Setting tokenizer")
+		self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
 
 	def _ensure_model_downloaded(self):
-				"""
-				Ensure the model is downloaded if it's not already local.
-				Returns:
-						str: The local path to the model.
-				"""
-				if os.path.exists(self.model_name_or_path):
-						# If the path exists locally, return it as-is
-						return self.model_name_or_path
+			"""
+			Ensure the model is downloaded if it's not already local.
+			Returns:
+					str: The local path to the model.
+			"""
+			# Convert the model name to the filesystem-safe format
+			safe_model_name = self.model_name_or_path.replace("/", "--")
+			local_model_dir = f"./temp_model/models--{safe_model_name}"
 
-				# If the model path doesn't exist locally, download it
-				print(f"Downloading model: {self.model_name_or_path}")
-				model_dir = AutoModelForCausalLM.from_pretrained(self.model_name_or_path, device_map="auto").save_pretrained("./temp_model")
-				return model_dir
+			# Check if the model is already downloaded in the specified directory
+			if os.path.exists(local_model_dir):
+					print(f"Model already exists locally: {local_model_dir}")
+					return local_model_dir
 
+			print(f"Downloading model: {self.model_name_or_path}")
+			return snapshot_download(self.model_name_or_path, cache_dir="./temp_model")
 
 	def _detect_quantization(self):
 				"""
