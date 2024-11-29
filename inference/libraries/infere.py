@@ -93,7 +93,9 @@ class Infer:
 			if self.is_quantized and not self.no_quantized:
 					# Configure BitsAndBytes for quantization
 					bnb_config = BitsAndBytesConfig(
-							load_in_8bit=True  # Adjust to False for 4-bit if needed
+						load_in_8bit=True,
+						llm_int8_threshold=6.0,
+						llm_int8_enable_fp32_cpu_offload=True,
 					)
 					print("Model is quantized")
 					print("Setting model")
