@@ -78,45 +78,63 @@ class Infer:
 				print(f"Failed to download model: {response.status_code}")
 
 	def load_model(self):
-		if "GGUF" in self.model_name_or_path:
-			print("The string contains 'GGUF'.")
-			self.load_model_gguf()
-			return
-		# Ensure the model is downloaded or accessible locally
-		local_path = self._ensure_model_downloaded()
-		print(local_path)
-		# Detect quantization
-		self.is_quantized = self._detect_quantization()
-		if self.is_quantized and not self.no_quantized:
-			# Configure BitsAndBytes for quantization
-			bnb_config = BitsAndBytesConfig(
-					load_in_8bit=True,  # Adjust to False for 4-bit if needed
-			)
-			print("Model is quantized")
-			print("Setting model")
-			self.model = AutoModelForCausalLM.from_pretrained(
-					self.model_name_or_path,
-					quantization_config=bnb_config,
-					device_map=self.device_map,
-			)
-		else:
-			# Load a non-quantized model
-			print("Setting model")
-			self.model = AutoModelForCausalLM.from_pretrained(
-					self.model_name_or_path,
-					device_map=self.device_map,
-			)
+			if "GGUF" in self.model_name_or_path:
+					print("The string contains 'GGUF'.")
+					self.load_model_gguf()
+					return
+			
+			# Ensure the model is downloaded or accessible locally
+			local_path = self._ensure_model_downloaded()
+			print(f"Model path: {local_path}")
+			
+			# Detect quantization
+			self.is_quantized = self._detect_quantization()
+			
+			if self.is_quantized and not self.no_quantized:
+					# Configure BitsAndBytes for quantization
+					bnb_config = BitsAndBytesConfig(
+							load_in_8bit=True  # Adjust to False for 4-bit if needed
+					)
+					print("Model is quantized")
+					print("Setting model")
+					self.model = AutoModelForCausalLM.from_pretrained(
+							self.model_name_or_path,
+							quantization_config=bnb_config,
+							device_map=self.device_map,
+					)
+			else:
+					# Load a non-quantized model
+					print("Setting model")
+					self.model = AutoModelForCausalLM.from_pretrained(
+							self.model_name_or_path,
+							device_map=self.device_map,
+					)
 
-		# Load the tokenizer
-		print("Setting tokenizer")
-		self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
+			# Load the tokenizer
+			print("Setting tokenizer")
+			self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
 
+			# Ensure the model's embedding layer matches the tokenizer's vocabulary size
+			print("Resizing model embeddings to match tokenizer vocabulary size...")
+			self.model.resize_token_embeddings(len(self.tokenizer))
+
+			print("Model and tokenizer successfully loaded.")
 	def _ensure_model_downloaded(self):
 			"""
 			Ensure the model is downloaded if it's not already local.
 			Returns:
 					str: The local path to the model.
 			"""
+			if(os.path.exists(self.model_name_or_path)):
+				print(f"Model already exists at {self.model_name_or_path}.")
+				return self.model_name_or_path
+			if(os.path.exists(f"{self.downloadDest}/{self.model_name_or_path}")):
+				print(f"Model already exists at {self.downloadDest}/{self.model_name_or_path}.")
+				return f"{self.downloadDest}/{self.model_name_or_path}"
+			if(os.path.exists(f"{self.downloadDest}/{self.filename}")):
+				print(f"Model already exists at {self.downloadDest}/{self.filename}.")
+				return f"{self.downloadDest}/{self.filename}"
+   
 			# Convert the model name to the filesystem-safe format
 			safe_model_name = self.model_name_or_path.replace("/", "--")
 			local_model_dir = f"./temp_model/models--{safe_model_name}"
@@ -303,7 +321,7 @@ class Infer:
 
 			# Generate response
 			response = pipeline(conversation_text, **final_generate_kwargs)
-			response = response[0]["generated_text"].replace(conversation_text, "").strip()
+			response = response[0]["generated_text"]
 
 			return response
 
