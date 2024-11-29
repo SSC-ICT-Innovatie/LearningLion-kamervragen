@@ -270,7 +270,7 @@ class Infer:
 
 		# Include files if provided
 		if files:
-				conversation.append(f"System: Relevant files: {', '.join(files)}")
+			conversation.append(f"System: Relevant files: {', '.join(map(str, files))}")
 
 		# Combine the conversation into a flat text format
 		conversation_text = "\n".join(conversation)
