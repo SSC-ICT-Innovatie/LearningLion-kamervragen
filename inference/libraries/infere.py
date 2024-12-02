@@ -34,7 +34,7 @@ class Infer:
 	def load_model_gguf(self):
 		print("Model must be Guff")
 		modeluri = self.download_model(self.get_gguf_file_url(self.model_name_or_path,filename=self.filename), self.downloadDest, self.filename)
-		self.model = Llama(model_path=modeluri)
+		self.model = Llama(model_path=modeluri, n_ctx=16384, n_threads=10, n_gpu_layers=-1)
 
 	def get_gguf_file_url(self, repo_id, filename="model.gguf"):
 		"""
@@ -276,15 +276,15 @@ class Infer:
 		conversation_text = "\n".join(conversation)
 
 		# Debug: Print the constructed prompt
-		print("Final Conversation Text for GGUF Model:\n", conversation_text)
+		# print("Final Conversation Text for GGUF Model:\n", conversation_text)
 
 		# Base generation settings
-		base_generate_kwargs = {"max_tokens": 1000, "temperature": 0.7}
+		base_generate_kwargs = {"max_tokens": 10000000, "temperature": 0.7}
 		final_generate_kwargs = {**base_generate_kwargs, **(generation_kwargs or {})}
-		print(f"conversation_text: {conversation_text}")
 		# Generate response using the model
-		response = self.model(conversation_text, **final_generate_kwargs)
-
+		print("Generating response...")
+		response = self.model(conversation_text, **final_generate_kwargs,)
+		print(f"Response: {response}")
 		# Extract and clean the response text
 		if "choices" in response and len(response["choices"]) > 0:
 				return response["choices"][0]["text"].strip()

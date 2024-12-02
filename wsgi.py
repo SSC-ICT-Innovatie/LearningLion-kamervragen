@@ -40,8 +40,16 @@ app.logger.setLevel(logging.INFO)
 app.logger.info('Logging is set up.')
 
 
-cors = CORS(app) # allow CORS for all domains on all routes.
+CORS(app, resources={r"/*": {"origins": "*"}}, 
+     allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning"])
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, ngrok-skip-browser-warning")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+    return response
 
 defaultLLMModel = "BramVanRoy/fietje-2-chat"
 
@@ -68,13 +76,14 @@ LLMModels = [
     "BramVanroy/GEITje-7B-ultra",
     "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed",
     "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed",
+    "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-q5_k_m.gguf",
 ]
     
 def doesSpecialtyExist(name: str) -> bool:
     return name in Specialty.__members__
 
 @app.route('/specialties', methods=['GET'])
-@cross_origin()
+
 def specialties():
     return jsonify([specialty.name for specialty in Specialty])
 
@@ -82,13 +91,13 @@ def doesLLMModelExist(name: str) -> bool:
     return name in LLMModels
 
 @app.route('/llmmodels', methods=['GET'])
-@cross_origin()
+
 def llmmodels():
     return jsonify(LLMModels)
 
 
 @app.route('/init', methods=['POST'])
-@cross_origin()
+
 def init():
     if request.is_json is False:
         return jsonify({"error": "Invalid JSON"})
@@ -102,7 +111,7 @@ def init():
     return False
 
 @app.route('/prompt', methods=['POST'])
-@cross_origin()
+
 def prompt():
     # Access the JSON data sent in the request body
     data = request.get_json()
@@ -122,7 +131,7 @@ def prompt():
         "output": AIresponse
     })
 @app.route('/document', methods=['GET'])
-@cross_origin()
+
 def document():
     getParams = request.args
     uuid = getParams.get('uuid')  # Fetch UUID safely
@@ -139,7 +148,7 @@ def document():
     return response
 
 @app.route('/query', methods=['POST'])
-@cross_origin()
+
 def query():
     data = request.get_json()
     # log ip address
@@ -161,7 +170,7 @@ def query():
         return KamerVragenModule.query(app, data)
     
 @app.route('/llm', methods=['POST'])
-@cross_origin()
+
 def infer():
     model = defaultLLMModel
     data = request.get_json()

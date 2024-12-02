@@ -96,8 +96,14 @@ Hoe kijkt u naar de uitlatingen van politiemensen bij het tankstation in Meppel 
 etc.
 """
 
+        filename = None
+        if ',' in model:
+            model = model.split(',')
+            filename = model[1]
+            model = model[0]
+
         AIresponse = infer_run_local(
-            data["prompt"], files=fetchedFiles, LLM=model, systemPrompt=systemPrompt,
+            data["prompt"], files=fetchedFiles, systemPrompt=systemPrompt, LLM=model, filename=filename
         )
         app.logger.info(f"AI response: {AIresponse}")
         return jsonify({"prompt": data["prompt"], "output": AIresponse})
