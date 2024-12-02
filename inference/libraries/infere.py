@@ -34,7 +34,13 @@ class Infer:
 	def load_model_gguf(self):
 		print("Model must be Guff")
 		modeluri = self.download_model(self.get_gguf_file_url(self.model_name_or_path,filename=self.filename), self.downloadDest, self.filename)
-		self.model = Llama(model_path=modeluri, n_ctx=16384, n_threads=10, n_gpu_layers=-1)
+		# self.model = Llama(model_path=modeluri, n_ctx=16384, n_threads=10, n_gpu_layers=-1)
+		self.model = Llama(
+			model_path=modeluri,
+			n_ctx=8192,
+			n_threads=10,
+			n_gpu_layers=80
+	)
 
 	def get_gguf_file_url(self, repo_id, filename="model.gguf"):
 		"""
