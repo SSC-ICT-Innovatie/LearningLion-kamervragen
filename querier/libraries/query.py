@@ -1,6 +1,7 @@
 from langchain.retrievers import EnsembleRetriever
 
 from querier.libraries import database
+from querier.libraries.embedding import Embedding
 # import database
 class Query:
     ensemble_retriever = None
@@ -39,15 +40,34 @@ class Query:
             return []
         print(f"Got {len(results)} results")
         # print(f"Results: {results}")
+        embed = Embedding()
+        data = database.Database(embed)
+        
+        # Get the database connection based on the specified range
+        db_connection = data.get_database_connection()
+        
+
+
         
         # Convert each result to a JSON-serializable format
         json_ready_results = []
         for result in results:
+                    # Open a cursor without using 'with'
+            cursor = db_connection.cursor()
+            print(f"result: {result}")
+            print(f"metadata: {result.metadata}")
+            print(f"UUID: {result.metadata['UUID']}")
+            cursor.execute("SELECT answer FROM questions WHERE UUID = ?", (result.metadata['UUID'],))
+            item = cursor.fetchone()
+            print(f"Item: {item}")
+            # Close the cursor and database connection
             # Assuming fields like `text` and `metadata` exist in `Document`
             json_ready_results.append({
                 "text": getattr(result, "page_content", ""),  # Replace with the actual text attribute
-                "metadata": getattr(result, "metadata", {})  # Replace with the actual metadata attribute
+                "metadata": getattr(result, "metadata", {}),  # Replace with the actual metadata attribute
+                "answer": item[0] if item else None
             })
+        data.close_database_connection()
         
         return json_ready_results
 

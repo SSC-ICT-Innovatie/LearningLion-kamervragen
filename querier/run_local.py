@@ -25,9 +25,7 @@ def getDocumentBlobFromDatabase(UUID: str, range=Range.Tiny):
     cursor = db_connection.cursor()
     cursor.execute("SELECT document FROM documents WHERE UUID = ?", (UUID,))
     item = cursor.fetchone()
-    
     # Close the cursor and database connection
-    cursor.close()
     data.close_database_connection()
     
     # Return the document if found, or None if not
