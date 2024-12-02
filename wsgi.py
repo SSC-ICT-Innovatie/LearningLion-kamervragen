@@ -77,6 +77,7 @@ LLMModels = [
     "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed",
     "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed",
     "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-q5_k_m.gguf",
+    "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-f16.gguf",
 ]
     
 def doesSpecialtyExist(name: str) -> bool:
