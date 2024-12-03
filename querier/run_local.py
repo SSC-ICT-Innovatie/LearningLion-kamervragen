@@ -4,7 +4,7 @@ from querier.libraries import database, query
 from querier.libraries.embedding import Embedding
 from querier.libraries.fetchingType import FetchingType
 
-def run_local_query_stores(prompt,range=Range.Tiny, fetch=FetchingType.answers):
+def run_local_query_stores(prompt,range=Range.Tiny, fetch=FetchingType.Answers):
   print("Querying stores")
   embed = Embedding()
   data = database.Database(embed)

@@ -31,18 +31,18 @@ class Query:
 
         print("Ensemble retriever set up")
             
-    def query(self, query_text, type=FetchingType.all):
+    def query(self, query_text, type=FetchingType.All):
         embed = Embedding()
         data = database.Database(embed)
         combined_results = []
         print(f"Querying: {query_text}")
         print(f"Type: {type.name}")
-        if(type == FetchingType.all or type == FetchingType.subjects):
+        if(type == FetchingType.All or type == FetchingType.Subjects):
             bm25A = data.get_bm25A_retriever()
             results = bm25A.invoke(query_text)
             combined_results.extend(results)
         
-        if(type == FetchingType.all or type == FetchingType.answers):
+        if(type == FetchingType.All or type == FetchingType.Answers):
             results = self.ensemble_retriever.invoke(query_text)
             for doc in results:
                 score = doc.metadata.get('score', None)

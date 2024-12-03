@@ -1,5 +1,5 @@
 from enum import Enum
 class FetchingType(Enum):
-    all:1
-    answers:2
-    subjects:3
+    All = 1
+    Answers = 2
+    Subjects = 3
