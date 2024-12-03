@@ -20,8 +20,11 @@ def run_local_ingest_stores(range=Range.Tiny, modelname="textgain/allnli-GroNLP-
   print("Perform ingestion")
   vector_store = data.get_vector_store()
   embeddings = embed.get_embeddings()
-  (_, bm25) = ingest.ingest(source_dir='./tmp', vector_store=vector_store, embeddings=embeddings, database=data)
+  (_, bm25B,bm25A) = ingest.ingest(source_dir='./tmp', vector_store=vector_store, embeddings=embeddings, database=data)
   print("Ingested")
   # Set and save BM25 retriever to ensure it's stored
   print("Set and save BM25")
-  data.set_bm25_retriever(bm25)
+  data.set_bm25_retriever(bm25A)
+  data.save_bm25_retriever(f"bm25A_{range.name}")
+  data.set_bm25_retriever(bm25B)
+  data.save_bm25_retriever(f"bm25B_{range.name}")

@@ -87,7 +87,10 @@ class Ingestion:
         sourceDir = source_dir if source_dir else "ubiops-file://default"
         if "ubiops-file://" in sourceDir:
             sourceDir = self.download_zip_only_fromUbiOps_bucket(sourceDir)
-        documents = []
+        documentsQASplits = []
+        documentsSubjectSplits = []
+        
+        
         # if zip is downloaded, unzip it with shutil
         for filename in os.listdir(sourceDir):
                 file_path = os.path.join(sourceDir, filename)
@@ -145,6 +148,14 @@ class Ingestion:
                                 footnotes=pre.get_footnotes(full_text),
                                 apiUploadDate=apiUploadDate
                             )
+                            documentsSubjectSplits.append(Document(page_content=doc_subject,
+                                                                metadata={"UUID": uuid, 
+                                                                        "filename": filename,
+                                                                        "subject":doc_subject,
+                                                                        "total_pages": len(pages),
+                                                                        "producer": doc_producer},
+                                                                id=f"{uuid}_S"))
+                            
                             questions = qa_list[0]
                             answers = qa_list[1]
                             for i in range(len(questions)):
@@ -166,7 +177,7 @@ class Ingestion:
                                                             "question_number": f"{questionNumbers}"},
                                                 id=f"{uuid}_Q{i}")
                                 print(f"Adding document {doc.id} to vector store")
-                                documents.append(doc)
+                                documentsQASplits.append(doc)
                             print(f"Processed {items} files out of {totalFiles_in_dir}")
                 except Exception as e:
                     print(f"Error while processing file: {filename}")
@@ -175,11 +186,11 @@ class Ingestion:
 
         # Set the batch size to 40,000 or any safe limit below the max size
         batch_size = 50
-        total_batches = (len(documents) // batch_size) + 1
+        total_batches = (len(documentsQASplits) // batch_size) + 1
         batch_count = 0
 
         print("Adding documents to vector store in batches")
-        for doc_batch in batch(documents, batch_size):
+        for doc_batch in batch(documentsQASplits, batch_size):
             batch_count += 1
             progress = (batch_count / total_batches) * 100
             print(f"Progress: {progress:.2f}% complete")
@@ -195,14 +206,16 @@ class Ingestion:
                 print(f"Batch {batch_count} content: {doc_batch}")
 
         print("Setting up BM25 retriever")
-        print(f"Total documents: {len(documents)}")
-        for doc in documents:
+        print(f"Total documents: {len(documentsQASplits)}")
+        for doc in documentsQASplits:
             doc.metadata['retriever'] = "bm25"
-        bm25 = BM25Retriever.from_documents(documents)
+        bm25B = BM25Retriever.from_documents(documentsQASplits)
+        
+        bm25A = BM25Retriever.from_documents(documentsSubjectSplits)
 
         print("done")
         print(f"Total files: {items}")
-        return vector_store, bm25
+        return vector_store, bm25B, bm25A
         
 
 def batch(iterable, batch_size):
