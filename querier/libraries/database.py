@@ -97,13 +97,13 @@ class Database:
       return Database.bm25Retriever
     
   def get_bm25A_retriever(self) -> BM25Retriever | None:
-      if Database.bm25BRetriever is None:
-          self.load_bm25_retriever("bm25A_Tiny.pkl")
-      return Database.bm25BRetriever
-  def get_bm25B_retriever(self) -> BM25Retriever | None:
       if Database.bm25ARetriever is None:
-          self.load_bm25_retriever("bm25B_Tiny.pkl")
+          Database.bm25ARetriever = self.load_bm25_retriever("bm25A_Tiny.pkl")
       return Database.bm25ARetriever
+  def get_bm25B_retriever(self) -> BM25Retriever | None:
+      if Database.bm25BRetriever is None:
+          Database.bm25BRetriever = self.load_bm25_retriever("bm25B_Tiny.pkl")
+      return Database.bm25BRetriever
 
   def save_bm25_retriever(self, filename="bm25_retriever.pkl"):
       if Database.bm25Retriever is None:
@@ -119,9 +119,9 @@ class Database:
           print(f"No file found at {filename} to load BM25 retriever.")
           return False
       with open(filename, 'rb') as file:
-          Database.bm25Retriever = pickle.load(file)
+          retriver = pickle.load(file)
       print(f"BM25 retriever loaded from {filename}")
-      return True
+      return retriver
 
   def upload_vector_store(self):
       if Database.vector_store is None:
