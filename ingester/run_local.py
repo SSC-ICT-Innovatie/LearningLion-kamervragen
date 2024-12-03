@@ -2,7 +2,7 @@ from DataFetcher.libraries.data_classes.range_enum import Range
 from ingester.libraries import database, ingestion
 from ingester.libraries.embedding import Embedding
 
-def run_local_ingest_stores(range=Range.Tiny):
+def run_local_ingest_stores(range=Range.Tiny, modelname="textgain/allnli-GroNLP-bert-base-dutch-cased"):
   print("Running Main class")
   # Initialize components
   embed = Embedding()
@@ -13,7 +13,7 @@ def run_local_ingest_stores(range=Range.Tiny):
   # Set up embeddings and vector store
   print("Set up embeddings and vector store")
   ingest.setupTextSplitter()
-  embed.setup_embeddings(modelname="textgain/allnli-GroNLP-bert-base-dutch-cased")
+  embed.setup_embeddings(modelname=modelname)
   data.setup_database(range=range)
 
   # Perform ingestion and retrieve BM25 retriever
