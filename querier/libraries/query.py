@@ -71,8 +71,8 @@ class Query:
                 })
             data.close_database_connection()
             combined_results.extend(json_ready_results)
-            print(f"Got {len(combined_results)} results")
-            return combined_results
+        print(f"Got {len(combined_results)} results")
+        return combined_results
 
     def get_ensemble_retriever(self):
         return self.ensemble_retriever
