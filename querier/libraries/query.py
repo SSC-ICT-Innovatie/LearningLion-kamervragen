@@ -2,13 +2,8 @@ from langchain.retrievers import EnsembleRetriever
 
 from querier.libraries import database
 from querier.libraries.embedding import Embedding
+from querier.libraries.fetchingType import FetchingType
 # import database
-from enum import Enum
-
-class Type(Enum):
-    all:1
-    answers:2
-    subjects:3
 class Query:
     ensemble_retriever = None
 
@@ -36,18 +31,18 @@ class Query:
 
         print("Ensemble retriever set up")
             
-    def query(self, query_text, type=Type.all):
+    def query(self, query_text, type=FetchingType.all):
         embed = Embedding()
         data = database.Database(embed)
         combined_results = []
         print(f"Querying: {query_text}")
         print(f"Type: {type.name}")
-        if(type == Type.all or type == Type.subjects):
+        if(type == FetchingType.all or type == FetchingType.subjects):
             bm25A = data.get_bm25A_retriever()
             results = bm25A.invoke(query_text)
             combined_results.extend(results)
         
-        if(type == Type.all or type == Type.answers):
+        if(type == FetchingType.all or type == FetchingType.answers):
             results = self.ensemble_retriever.invoke(query_text)
             for doc in results:
                 score = doc.metadata.get('score', None)
@@ -77,7 +72,7 @@ class Query:
             data.close_database_connection()
             combined_results.extend(json_ready_results)
             print(f"Got {len(combined_results)} results")
-            return combined_results 
+            return combined_results
 
     def get_ensemble_retriever(self):
         return self.ensemble_retriever

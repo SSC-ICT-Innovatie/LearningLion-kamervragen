@@ -2,8 +2,9 @@
 from DataFetcher.libraries.data_classes.range_enum import Range
 from querier.libraries import database, query
 from querier.libraries.embedding import Embedding
+from querier.libraries.fetchingType import FetchingType
 
-def run_local_query_stores(prompt,range=Range.Tiny, fetch=query.Type.answers):
+def run_local_query_stores(prompt,range=Range.Tiny, fetch=FetchingType.answers):
   print("Querying stores")
   embed = Embedding()
   data = database.Database(embed)
@@ -11,7 +12,7 @@ def run_local_query_stores(prompt,range=Range.Tiny, fetch=query.Type.answers):
   querier = query.Query()
   querier.setup_querier(data)
   data.close_database_connection()
-  return querier.query(prompt)
+  return querier.query(prompt, type=fetch)
   
 def getDocumentBlobFromDatabase(UUID: str, range=Range.Tiny):
     # Initialize the embedding and database objects

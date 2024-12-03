@@ -5,7 +5,7 @@ from flask import Flask, jsonify, make_response, request
 
 from DataFetcher.libraries.data_classes.range_enum import Range
 from modules.kamervragen import KamerVragenModule
-from querier.libraries.query import Type
+from querier.libraries.fetchingType import FetchingType
 from querier.run_local import getDocumentBlobFromDatabase, run_local_query_stores
 from inference.run_local import infer_run_local
 from flask_cors import CORS, cross_origin
@@ -124,7 +124,7 @@ def prompt():
     if "type" not in data:
         return jsonify({"error": "No type provided"})
     type = data["type"]
-    if type in Type.__members__:
+    if type in FetchingType.__members__:
         return jsonify({"error": "Invalid type"})
     
 
