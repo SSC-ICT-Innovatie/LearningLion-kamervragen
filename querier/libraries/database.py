@@ -12,6 +12,8 @@ from querier.libraries.ubiops_helper import UbiopsHelper
 
 class Database:
   bm25Retriever = None
+  bm25ARetriever = None
+  bm25BRetriever = None
   vector_store = None
   vectordb_folder = "vectordb"
   vectordb_name = "NewPipeChroma"
@@ -93,6 +95,15 @@ class Database:
       if Database.bm25Retriever is None:
           self.load_bm25_retriever()
       return Database.bm25Retriever
+    
+  def get_bm25A_retriever(self) -> BM25Retriever | None:
+      if Database.bm25BRetriever is None:
+          self.load_bm25_retriever("bm25A_Tiny.pkl")
+      return Database.bm25BRetriever
+  def get_bm25B_retriever(self) -> BM25Retriever | None:
+      if Database.bm25ARetriever is None:
+          self.load_bm25_retriever("bm25B_Tiny.pkl")
+      return Database.bm25ARetriever
 
   def save_bm25_retriever(self, filename="bm25_retriever.pkl"):
       if Database.bm25Retriever is None:

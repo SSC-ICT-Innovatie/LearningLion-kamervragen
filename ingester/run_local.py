@@ -25,6 +25,6 @@ def run_local_ingest_stores(range=Range.Tiny, modelname="textgain/allnli-GroNLP-
   # Set and save BM25 retriever to ensure it's stored
   print("Set and save BM25")
   data.set_bm25_retriever(bm25A)
-  data.save_bm25_retriever(f"bm25A_{range.name}")
+  data.save_bm25_retriever(f"bm25A_{range.name}.pkl")
   data.set_bm25_retriever(bm25B)
-  data.save_bm25_retriever(f"bm25B_{range.name}")
+  data.save_bm25_retriever(f"bm25B_{range.name}.pkl")
