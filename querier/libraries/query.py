@@ -58,25 +58,17 @@ class Query:
             print(f"Document: {doc.page_content}, Score: {score}")
         if results is None:
             return []
-        # Get the database connection based on the specified range
-        db_connection = data.get_database_connection()
-        # Convert each result to a JSON-serializable format
         json_ready_results = []
         for result in results:
             # Open a cursor without using 'with'
-            cursor = db_connection.cursor()
             print(f"result: {result}")
             print(f"metadata: {result.metadata}")
             print(f"UUID: {result.metadata['UUID']}")
-            cursor.execute("SELECT answer FROM questions WHERE UUID = ? AND QUESTIONNUMBER = ?", (result.metadata['UUID'],result.metadata['question_number']))
-            item = cursor.fetchone()
-            print(f"Item: {item}")
             # Close the cursor and database connection
             # Assuming fields like `text` and `metadata` exist in `Document`
             json_ready_results.append({
                 "text": getattr(result, "page_content", ""),
                 "metadata": getattr(result, "metadata", {}),
-                "answer": item[0] if item else None
             })
         data.close_database_connection()
         # Filter combined results for no duplicates ids
