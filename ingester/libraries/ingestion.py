@@ -89,6 +89,7 @@ class Ingestion:
             sourceDir = self.download_zip_only_fromUbiOps_bucket(sourceDir)
         documentsQASplits = []
         documentsSubjectSplits = []
+        documentsSubjectQASplits = []
         
         
         # if zip is downloaded, unzip it with shutil
@@ -158,13 +159,14 @@ class Ingestion:
                             
                             questions = qa_list[0]
                             answers = qa_list[1]
+                            # QA Splits
                             for i in range(len(questions)):
                                 question = questions[i]
                                 answer = answers[i]
                                 question = pre.clean_text_MD(question)
                                 answer = pre.clean_text_MD(answer)
                                 
-                                text = f"{question}"
+                                text = f"{question} {answer}"
                                 # text = f"{heading}\nQuestion {i+1}: {question}"
                                 questionNumbers = pre.get_question_number(text)[0]
                                 # split_pages = text_splitter.split_text(text)
@@ -174,10 +176,23 @@ class Ingestion:
                                                             "subject":doc_subject,
                                                             "total_pages": len(pages),
                                                             "producer": doc_producer,
-                                                            "question_number": f"{questionNumbers}"},
+                                                            "question_number": f"{questionNumbers}",
+                                                            "Split": "QA"},
                                                 id=f"{uuid}_Q{i}")
                                 print(f"Adding document {doc.id} to vector store")
                                 documentsQASplits.append(doc)
+                                # Subject QA splits
+                                text = f"{doc_subject} {question} {answer}"
+                                doc = Document(page_content=text,
+                                                metadata={"UUID": uuid, 
+                                                            "filename": filename,
+                                                            "subject":doc_subject,
+                                                            "total_pages": len(pages),
+                                                            "producer": doc_producer,
+                                                            "question_number": f"{questionNumbers}"
+                                                            ,"Split": "Subject-QA"},
+                                                id=f"{uuid}_SQ{i}")
+                                documentsSubjectQASplits.append(doc)
                             print(f"Processed {items} files out of {totalFiles_in_dir}")
                 except Exception as e:
                     print(f"Error while processing file: {filename}")
@@ -209,13 +224,15 @@ class Ingestion:
         print(f"Total documents: {len(documentsQASplits)}")
         for doc in documentsQASplits:
             doc.metadata['retriever'] = "bm25"
+            
+        bm25C = BM25Retriever.from_documents(documentsSubjectQASplits)
         bm25B = BM25Retriever.from_documents(documentsQASplits)
         
         bm25A = BM25Retriever.from_documents(documentsSubjectSplits)
 
         print("done")
         print(f"Total files: {items}")
-        return vector_store, bm25B, bm25A
+        return vector_store,bm25A, bm25B, bm25C
         
 
 def batch(iterable, batch_size):

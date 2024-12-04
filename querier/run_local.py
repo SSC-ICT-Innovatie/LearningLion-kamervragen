@@ -4,15 +4,21 @@ from querier.libraries import database, query
 from querier.libraries.embedding import Embedding
 from querier.libraries.fetchingType import FetchingType
 
-def run_local_query_stores(prompt,range=Range.Tiny, fetch=FetchingType.Answers):
+def run_local_query_stores(prompt,subject=None,range=Range.Tiny):
   print("Querying stores")
+  documents = []
   embed = Embedding()
   data = database.Database(embed)
   data.setup_database(range=range)
   querier = query.Query()
   querier.setup_querier(data)
   data.close_database_connection()
-  return querier.query(prompt, type=fetch)
+  answer_documents = querier.query(prompt, type=FetchingType.Answers)
+  documents.extend(answer_documents)
+  if subject is not None:
+    subject_documents = querier.query(subject,type=FetchingType.Subjects)
+    documents.extend(querier.combine_arrays_no_overlap(subject_documents, answer_documents))
+  return documents
   
 def getDocumentBlobFromDatabase(UUID: str, range=Range.Tiny):
     # Initialize the embedding and database objects

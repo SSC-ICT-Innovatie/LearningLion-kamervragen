@@ -22,15 +22,72 @@ class Query:
         bm25_retriever = database.get_bm25B_retriever()
         if bm25_retriever is None:
             raise ValueError("BM25 retriever is not set in the database")
-
         # Create the ensemble retriever
         self.ensemble_retriever = EnsembleRetriever(
             retrievers=[bm25_retriever, chroma_retriever],
-            weights=[0.0, 1.0], # TODO: tune these weights,
+            weights=[0.5, 0.5], # TODO: tune these weights,
         )
 
         print("Ensemble retriever set up")
-            
+        
+    def get_uuid(self, item):
+        """Helper function to extract the UUID from either structure."""
+        if isinstance(item, dict):
+            return item['metadata']['UUID']
+        elif hasattr(item, 'metadata') and isinstance(item.metadata, dict):
+            return item.metadata['UUID']
+        return None  # Return None if the structure is unexpected
+    def combine_arrays_no_overlap(self, a,b):
+        arr = []
+        b_uuids = {self.get_uuid(item) for item in b if self.get_uuid(item) is not None}
+        for i in a:
+            uuid = self.get_uuid(i)
+            if uuid and uuid not in b_uuids:
+                arr.append(i)
+        arr.extend(b)
+        return arr  
+    def query_Answers(self, query_text, data: database.Database):
+        results = self.ensemble_retriever.invoke(query_text)
+        for doc in results:
+            score = doc.metadata.get('score', None)
+            print(f"Document: {doc.page_content}, Score: {score}")
+        if results is None:
+            return []
+        # Get the database connection based on the specified range
+        db_connection = data.get_database_connection()
+        # Convert each result to a JSON-serializable format
+        json_ready_results = []
+        for result in results:
+            # Open a cursor without using 'with'
+            cursor = db_connection.cursor()
+            print(f"result: {result}")
+            print(f"metadata: {result.metadata}")
+            print(f"UUID: {result.metadata['UUID']}")
+            cursor.execute("SELECT answer FROM questions WHERE UUID = ?", (result.metadata['UUID'],))
+            item = cursor.fetchone()
+            print(f"Item: {item}")
+            # Close the cursor and database connection
+            # Assuming fields like `text` and `metadata` exist in `Document`
+            json_ready_results.append({
+                "text": getattr(result, "page_content", ""),  # Replace with the actual text attribute
+                "metadata": getattr(result, "metadata", {}),  # Replace with the actual metadata attribute
+                "answer": item[0] if item else None
+            })
+        data.close_database_connection()
+        # Filter combined results for no duplicates ids
+        return json_ready_results
+    def query_Subjects(self, query_text, data: database.Database):
+        bm25A = data.get_bm25A_retriever()
+        if bm25A is None:
+            raise ValueError("BM25A retriever is not set in the database")
+        AResults = bm25A.invoke(query_text)
+        bm25C = data.get_bm25C_retriever()
+        if bm25C is None:
+            raise ValueError("BM25C retriever is not set in the database")
+        CResults = bm25C.invoke(query_text)
+        combined_results = self.combine_arrays_no_overlap(AResults, CResults)
+        return combined_results
+        
     def query(self, query_text, type=FetchingType.All):
         embed = Embedding()
         data = database.Database(embed)
@@ -38,39 +95,11 @@ class Query:
         print(f"Querying: {query_text}")
         print(f"Type: {type.name}")
         if(type == FetchingType.All or type == FetchingType.Subjects):
-            bm25A = data.get_bm25A_retriever()
-            results = bm25A.invoke(query_text)
-            combined_results.extend(results)
-        
+            combined_results.extend(self.query_Subjects(query_text, data))
         if(type == FetchingType.All or type == FetchingType.Answers):
-            results = self.ensemble_retriever.invoke(query_text)
-            for doc in results:
-                score = doc.metadata.get('score', None)
-                print(f"Document: {doc.page_content}, Score: {score}")
-            if results is None:
-                return []
-            # Get the database connection based on the specified range
-            db_connection = data.get_database_connection()
-            # Convert each result to a JSON-serializable format
-            json_ready_results = []
-            for result in results:
-                        # Open a cursor without using 'with'
-                cursor = db_connection.cursor()
-                print(f"result: {result}")
-                print(f"metadata: {result.metadata}")
-                print(f"UUID: {result.metadata['UUID']}")
-                cursor.execute("SELECT answer FROM questions WHERE UUID = ?", (result.metadata['UUID'],))
-                item = cursor.fetchone()
-                print(f"Item: {item}")
-                # Close the cursor and database connection
-                # Assuming fields like `text` and `metadata` exist in `Document`
-                json_ready_results.append({
-                    "text": getattr(result, "page_content", ""),  # Replace with the actual text attribute
-                    "metadata": getattr(result, "metadata", {}),  # Replace with the actual metadata attribute
-                    "answer": item[0] if item else None
-                })
-            data.close_database_connection()
-            combined_results.extend(json_ready_results)
+            answerResults = self.query_Answers(query_text, data)
+            combined_results = self.combine_arrays_no_overlap(combined_results, answerResults)
+            
         print(f"Got {len(combined_results)} results")
         return combined_results
 

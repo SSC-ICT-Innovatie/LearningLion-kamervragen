@@ -96,13 +96,27 @@ class Database:
           self.load_bm25_retriever()
       return Database.bm25Retriever
     
-  def get_bm25A_retriever(self) -> BM25Retriever | None:
+  def get_bm25A_retriever(self,range=Range.Tiny) -> BM25Retriever | None:
       if Database.bm25ARetriever is None:
-          Database.bm25ARetriever = self.load_bm25_retriever("bm25A_Tiny.pkl")
+          print(f"Loading bm25A_{range.name}.pkl")
+          Database.bm25ARetriever = self.load_bm25_retriever(f"bm25A_{range.name}.pkl")
+      if Database.bm25ARetriever is False:
+          return None
       return Database.bm25ARetriever
-  def get_bm25B_retriever(self) -> BM25Retriever | None:
+  
+  def get_bm25B_retriever(self,range=Range.Tiny) -> BM25Retriever | None:
       if Database.bm25BRetriever is None:
-          Database.bm25BRetriever = self.load_bm25_retriever("bm25B_Tiny.pkl")
+          print(f"Loading bm25B_{range.name}.pkl")
+          Database.bm25BRetriever = self.load_bm25_retriever(f"bm25B_{range.name}.pkl")
+      if Database.bm25BRetriever is False:
+          return None
+      return Database.bm25BRetriever
+  def get_bm25C_retriever(self, range=Range.Tiny) -> BM25Retriever | None:
+      if Database.bm25BRetriever is None:
+          print(f"Loading bm25C_{range.name}.pkl")
+          Database.bm25ARetriever = self.load_bm25_retriever(f"bm25C_{range.name}.pkl")
+      if Database.bm25BRetriever is False:
+          return None
       return Database.bm25BRetriever
 
   def save_bm25_retriever(self, filename="bm25_retriever.pkl"):
