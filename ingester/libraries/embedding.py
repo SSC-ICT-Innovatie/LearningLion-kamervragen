@@ -1,4 +1,5 @@
 from langchain_huggingface import HuggingFaceEmbeddings
+from sentence_transformers import SentenceTransformer
 import torch
 
 class Embedding:
@@ -12,7 +13,7 @@ class Embedding:
        return self.setup_embeddings()
     return self.embeddings
     
-  def setup_embeddings(self, modelname="textgain/allnli-GroNLP-bert-base-dutch-cased"):
+  def setup_embeddings(self,localModel=False, modelname="textgain/allnli-GroNLP-bert-base-dutch-cased"):
     print("Setting up embeddings")
     model_kwargs = {'device': 'cpu'}
     encode_kwargs = {'normalize_embeddings': False}
@@ -26,10 +27,15 @@ class Embedding:
     model_kwargs["trust_remote_code"] = True
     encode_kwargs = {'normalize_embeddings': False,
                      'batch_size': 16}
-    self.embeddings = HuggingFaceEmbeddings(
-        model_name=model_name,
-        model_kwargs=model_kwargs,
-        encode_kwargs=encode_kwargs
-    )
+    
+    if(localModel):
+        self.embeddings = SentenceTransformer(model_name)
+
+    else:
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs
+        )
     print("Embeddings set up")
     return self.embeddings

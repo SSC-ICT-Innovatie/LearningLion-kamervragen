@@ -3,9 +3,6 @@ import embedding
 import ingestion
 import query
 
-from langchain_core.documents import Document
-import os
-from pypdf import PdfReader
 
 class Deployment:
   def __init__(self, base_directory=None, context=None):

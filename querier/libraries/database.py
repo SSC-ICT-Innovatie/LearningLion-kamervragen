@@ -12,11 +12,14 @@ from querier.libraries.ubiops_helper import UbiopsHelper
 
 class Database:
   bm25Retriever = None
+  bm25ARetriever = None
+  bm25BRetriever = None
   vector_store = None
   vectordb_folder = "vectordb"
   vectordb_name = "NewPipeChroma"
   embeddings = None
   con = None
+  range = Range.Tiny
   
   def __init__(self, embed:Embedding):
         if embed is not None:
@@ -63,18 +66,21 @@ class Database:
             print("Database connection closed")
         else:
             print("No database connection to close")
-  def get_vector_store(self) -> Chroma | None:
+  def get_vector_store(self, range=None) -> Chroma | None:
       # Load vector store if not already set
       if Database.vector_store is None and self.embeddings is not None:
-          if os.path.exists(self.vectordb_folder):
-              Database.vector_store = Chroma(
-                  persist_directory=self.vectordb_folder,
-                  embedding_function=self.embeddings.get_embeddings(),
-              )
-              print("Vector store loaded from disk")
-          else:
-              print("No vector store found on disk")
-              return None
+        if range is not None:
+          names = self.getNameBasedOnRange(range)
+          self.vectordb_folder = names[1]
+        if os.path.exists(self.vectordb_folder):
+            Database.vector_store = Chroma(
+                persist_directory=self.vectordb_folder,
+                embedding_function=self.embeddings.get_embeddings(),
+            )
+            print("Vector store loaded from disk")
+        else:
+            print("No vector store found on disk")
+            return None
       return Database.vector_store
 
   def setup_bm25_retriever(self, docs=None) -> BM25Retriever | None:
@@ -93,6 +99,29 @@ class Database:
       if Database.bm25Retriever is None:
           self.load_bm25_retriever()
       return Database.bm25Retriever
+    
+  def get_bm25A_retriever(self,range=Range.Tiny) -> BM25Retriever | None:
+      if Database.bm25ARetriever is None:
+          print(f"Loading bm25A_{range.name}.pkl")
+          Database.bm25ARetriever = self.load_bm25_retriever(f"bm25A_{range.name}.pkl")
+      if Database.bm25ARetriever is False:
+          return None
+      return Database.bm25ARetriever
+  
+  def get_bm25B_retriever(self,range=Range.Tiny) -> BM25Retriever | None:
+      if Database.bm25BRetriever is None:
+          print(f"Loading bm25B_{range.name}.pkl")
+          Database.bm25BRetriever = self.load_bm25_retriever(f"bm25B_{range.name}.pkl")
+      if Database.bm25BRetriever is False:
+          return None
+      return Database.bm25BRetriever
+  def get_bm25C_retriever(self, range=Range.Tiny) -> BM25Retriever | None:
+      if Database.bm25BRetriever is None:
+          print(f"Loading bm25C_{range.name}.pkl")
+          Database.bm25ARetriever = self.load_bm25_retriever(f"bm25C_{range.name}.pkl")
+      if Database.bm25BRetriever is False:
+          return None
+      return Database.bm25BRetriever
 
   def save_bm25_retriever(self, filename="bm25_retriever.pkl"):
       if Database.bm25Retriever is None:
@@ -108,9 +137,9 @@ class Database:
           print(f"No file found at {filename} to load BM25 retriever.")
           return False
       with open(filename, 'rb') as file:
-          Database.bm25Retriever = pickle.load(file)
+          retriver = pickle.load(file)
       print(f"BM25 retriever loaded from {filename}")
-      return True
+      return retriver
 
   def upload_vector_store(self):
       if Database.vector_store is None:

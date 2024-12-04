@@ -167,3 +167,4 @@ docs
 *.pkl
 /vectordb_Tiny
 *.db
+/temp_model

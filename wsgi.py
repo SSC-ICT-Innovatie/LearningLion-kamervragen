@@ -1,14 +1,12 @@
+from enum import Enum
 import logging
-from logging.config import dictConfig
 from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, make_response, request
 
 from DataFetcher.libraries.data_classes.range_enum import Range
-from DataFetcher.run_local import run_local_datafetcher
-from ingester.libraries.database import Database
-from ingester.libraries.embedding import Embedding
+from modules.kamervragen import KamerVragenModule
+from querier.libraries.fetchingType import FetchingType
 from querier.run_local import getDocumentBlobFromDatabase, run_local_query_stores
-from ingester.run_local import run_local_ingest_stores
 from inference.run_local import infer_run_local
 from flask_cors import CORS, cross_origin
 
@@ -43,8 +41,18 @@ app.logger.setLevel(logging.INFO)
 app.logger.info('Logging is set up.')
 
 
-cors = CORS(app) # allow CORS for all domains on all routes.
+CORS(app, resources={r"/*": {"origins": "*"}}, 
+     allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning"])
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, ngrok-skip-browser-warning")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+    return response
+
+defaultLLMModel = "BramVanRoy/fietje-2-chat"
 
 @app.route('/')
 def index():
@@ -60,23 +68,52 @@ def hello():
 def ping():
     return {"pong"}
 
+class Specialty(Enum):
+    KamerVragen = 1
+    
+LLMModels = [
+    "Open-Orca/Mistral-7B-OpenOrca",
+    "BramVanroy/fietje-2-chat",
+    "BramVanroy/GEITje-7B-ultra",
+    "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed",
+    "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed",
+    "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-q5_k_m.gguf",
+    "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-f16.gguf",
+]
+    
+def doesSpecialtyExist(name: str) -> bool:
+    return name in Specialty.__members__
+
+@app.route('/specialties', methods=['GET'])
+
+def specialties():
+    return jsonify([specialty.name for specialty in Specialty])
+
+def doesLLMModelExist(name: str) -> bool:
+    return name in LLMModels
+
+@app.route('/llmmodels', methods=['GET'])
+
+def llmmodels():
+    return jsonify(LLMModels)
+
+
 @app.route('/init', methods=['POST'])
-@cross_origin()
+
 def init():
     if request.is_json is False:
         return jsonify({"error": "Invalid JSON"})
     data = request.get_json()
-    range = Range.Tiny
-    if "range" in data:
-        if data["range"] not in Range.__members__:
-            return jsonify({"error": "Invalid range"})
-        range = Range[data["range"]]
-    run_local_datafetcher(range=range)
-    run_local_ingest_stores()
-    return True
+    if "specialty" not in data:
+        return jsonify({"error": "No specialty provided"})
+    if doesSpecialtyExist(data["specialty"]) is False:
+        return jsonify({"error": "Invalid specialty"})
+    if data["specialty"] == "KamerVragen":
+        return KamerVragenModule.initialize(app, data)
+    return False
 
 @app.route('/prompt', methods=['POST'])
-@cross_origin()
+
 def prompt():
     # Access the JSON data sent in the request body
     data = request.get_json()
@@ -84,8 +121,14 @@ def prompt():
         return jsonify({"error": "No data provided"})
     if "prompt" not in data:
         return jsonify({"error": "No prompt provided"})
+    if "type" not in data:
+        return jsonify({"error": "No type provided"})
+    type = data["type"]
+    if type in FetchingType.__members__:
+        return jsonify({"error": "Invalid type"})
+    
 
-    documents = run_local_query_stores(data["prompt"])
+    documents = run_local_query_stores(data["prompt"], type=type)
     print(f"Got {len(documents)} documents")
     print(f"Documents: {documents[:5]}")
     AIresponse = infer_run_local(data["prompt"], files=documents)
@@ -96,7 +139,7 @@ def prompt():
         "output": AIresponse
     })
 @app.route('/document', methods=['GET'])
-@cross_origin()
+
 def document():
     getParams = request.args
     uuid = getParams.get('uuid')  # Fetch UUID safely
@@ -113,7 +156,7 @@ def document():
     return response
 
 @app.route('/query', methods=['POST'])
-@cross_origin()
+
 def query():
     data = request.get_json()
     # log ip address
@@ -126,57 +169,47 @@ def query():
     if "query" not in data:
         app.logger.error("No query provided")
         return jsonify({"error": "No query provided"})
-    if("range" in data):
-        if data["range"] not in Range.__members__:
-            return jsonify({"error": "Invalid range"})
-        _range = Range[data["range"]]
-    app.logger.info("Using range: {range.name}")
-    documents = run_local_query_stores(data["query"], range=_range)
-    app.logger.info(f"Documents: {documents}")
-    return jsonify({
-        "query": data["query"],
-        "documents": documents
-    })
+    if "specialty" not in data:
+        app.logger.error("No specialty provided")
+        return jsonify({"error": "No specialty provided"})
+    if doesSpecialtyExist(data["specialty"]) is False:
+        return jsonify({"error": "Invalid specialty"})
+    if data["specialty"] == "KamerVragen":
+        return KamerVragenModule.query(app, data)
     
 @app.route('/llm', methods=['POST'])
-@cross_origin()
+
 def infer():
+    model = defaultLLMModel
     data = request.get_json()
     app.logger.info(f"IP address: {request.remote_addr}")
     app.logger.info(f"Data recived: {data}")
-    _range = range
-    fetchedFiles = []
     if data is None:
         app.logger.error("No data provided")
         return jsonify({"error": "No data provided"})
     if "prompt" not in data:
         app.logger.error("No prompt provided")
         return jsonify({"error": "No prompt provided"})
-    files = []
-    if "range" in data:
-        if data["range"] not in Range.__members__:
-            return jsonify({"error": "Invalid range"})
-        _range = Range[data["range"]]
-    app.logger.info(f"Using range: {range.name}")
-    if "files" in data:
-        embeddings = Embedding()
-        database = Database(embed=embeddings, range=_range)
-        files = data['files']
-        print(f"Files: {files}")
-        for file in files:
-            print(f"File: {file}")
-            print(f"uuid {file.get('uuid')}")
-            database.get_database_connection()
-            # get answer from database
-            fetchedData = database.getQuestion(file.get('uuid'), file.get('questionNumber'))
-            fetchedFiles.append(fetchedData)
-            print(f"for file: {file.get('uuid')} question number: {file.get('questionNumber')} fetched data: {fetchedData}")
-        print(f"Question and answer: {fetchedFiles}")
-        app.logger.info(f"Question and answer: {fetchedFiles}")
-    app.logger.info(f"Prompt: {data['prompt']}")
-    AIresponse = infer_run_local(data["prompt"], files=fetchedFiles)
-    app.logger.info(f"AI response: {AIresponse}")
-    return jsonify({
-        "prompt": data["prompt"],
-        "output": AIresponse
-    })
+    if "specialty" not in data:
+        app.logger.error("No specialty provided")
+        return jsonify({"error": "No specialty provided"})
+    if doesSpecialtyExist(data["specialty"]) is False:
+        return jsonify({"error": "Invalid specialty"})
+    specialty = data["specialty"]
+    if "model" in data:
+        if doesLLMModelExist(data["model"]):
+            model = data["model"]
+        else:
+            print(f"Invalid model: {data['model']}")
+            return jsonify({"error": "Invalid model"})
+    systemPrompt = None
+    if "systemPrompt" in data:
+        systemPrompt = data["systemPrompt"]
+    if specialty == "KamerVragen":
+        return KamerVragenModule.inference(app, data, model=model, systemPrompt=systemPrompt)
+    else:
+        return {
+            "prompt": data["prompt"],
+            "output": infer_run_local(data["prompt"], LLM=model)
+        }
+        

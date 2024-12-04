@@ -81,7 +81,7 @@ class Preprocessor:
 					else:
 							# Otherwise, keep adding strings to the current page
 							current_page.append(string)
-			textnexttopattern = re.compile(r'\d+\s+[^\d\s]')
+			# textnexttopattern = re.compile(r'\d+\s+[^\d\s]')
 
 			for page in pages:
 					page.reverse()

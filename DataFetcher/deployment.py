@@ -1,7 +1,4 @@
-from enum import Enum
 import os
-import shutil
-import tempfile
 import zipfile
 
 import requests
@@ -66,7 +63,7 @@ class Deployment:
         
         if(os.environ["local"] == "true"):
             return True
-        ratelimit = 300
+        # ratelimit = 300
         configuration = ubiops.Configuration()
         configuration.api_key['Authorization'] = "Token XXXXX"
         configuration.host = "https://api.ubiops.com/v2.1"
