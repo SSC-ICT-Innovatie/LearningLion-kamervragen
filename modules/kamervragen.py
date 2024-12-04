@@ -119,6 +119,6 @@ etc.
                 return jsonify({"error": "Invalid range"})
             _range = Range[data["range"]]
         app.logger.info("Using range: {range.name}")
-        documents = run_local_query_stores(data["query"], range=_range)
+        documents = run_local_query_stores(data["query"],data["subject"], range=_range)
         app.logger.info(f"Documents: {documents}")
         return jsonify({"query": data["query"], "documents": documents})
