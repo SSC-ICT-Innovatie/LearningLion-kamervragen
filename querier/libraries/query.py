@@ -64,7 +64,7 @@ class Query:
             print(f"result: {result}")
             print(f"metadata: {result.metadata}")
             print(f"UUID: {result.metadata['UUID']}")
-            cursor.execute("SELECT answer FROM questions WHERE UUID = ?", (result.metadata['UUID'],))
+            cursor.execute("SELECT answer FROM questions WHERE UUID = ? AND QUESTIONNUMBER = ?", (result.metadata['UUID'],result.metadata['question_number']))
             item = cursor.fetchone()
             print(f"Item: {item}")
             # Close the cursor and database connection
