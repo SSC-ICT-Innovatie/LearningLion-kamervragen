@@ -13,10 +13,10 @@ def run_local_query_stores(prompt,subject=None,range=Range.Tiny):
   querier = query.Query()
   querier.setup_querier(data)
   data.close_database_connection()
-  answer_documents = querier.query(prompt, type=FetchingType.Answers)
+  answer_documents = querier.query(prompt, type=FetchingType.Answers, range=range)
   documents.extend(answer_documents)
   if subject is not None:
-    subject_documents = querier.query(subject,type=FetchingType.Subjects)
+    subject_documents = querier.query(subject,type=FetchingType.Subjects, range=range)
     documents.extend(querier.combine_arrays_no_overlap(subject_documents, answer_documents))
   return documents
   

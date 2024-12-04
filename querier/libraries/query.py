@@ -1,5 +1,6 @@
 from langchain.retrievers import EnsembleRetriever
 
+from DataFetcher.libraries.data_classes.range_enum import Range
 from querier.libraries import database
 from querier.libraries.embedding import Embedding
 from querier.libraries.fetchingType import FetchingType
@@ -10,16 +11,16 @@ class Query:
     def __init__(self):
         print("Query class initialized")
 
-    def setup_querier(self, database: database.Database):
+    def setup_querier(self, database: database.Database, range=Range.Tiny):
         print("Setting up ensemble retriever")
 
         # Retrieve the Chroma vector store
-        chroma_vectorstore = database.get_vector_store()
+        chroma_vectorstore = database.get_vector_store(range=range)
         if chroma_vectorstore is None:
             raise ValueError("Chroma vector store is not set in the database")
         chroma_retriever = chroma_vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"k": 5,"score_threshold": 0.2})
         # Retrieve the BM25 retriever
-        bm25_retriever = database.get_bm25B_retriever()
+        bm25_retriever = database.get_bm25B_retriever(range=range)
         if bm25_retriever is None:
             raise ValueError("BM25 retriever is not set in the database")
         # Create the ensemble retriever
@@ -76,26 +77,26 @@ class Query:
         data.close_database_connection()
         # Filter combined results for no duplicates ids
         return json_ready_results
-    def query_Subjects(self, query_text, data: database.Database):
-        bm25A = data.get_bm25A_retriever()
+    def query_Subjects(self, query_text, data: database.Database, range=Range.Tiny):
+        bm25A = data.get_bm25A_retriever(range=range)
         if bm25A is None:
             raise ValueError("BM25A retriever is not set in the database")
         AResults = bm25A.invoke(query_text)
-        bm25C = data.get_bm25C_retriever()
+        bm25C = data.get_bm25C_retriever(range=range)
         if bm25C is None:
             raise ValueError("BM25C retriever is not set in the database")
         CResults = bm25C.invoke(query_text)
         combined_results = self.combine_arrays_no_overlap(AResults, CResults)
         return combined_results
         
-    def query(self, query_text, type=FetchingType.All):
+    def query(self, query_text, type=FetchingType.All, range=Range.Tiny):
         embed = Embedding()
         data = database.Database(embed)
         combined_results = []
         print(f"Querying: {query_text}")
         print(f"Type: {type.name}")
         if(type == FetchingType.All or type == FetchingType.Subjects):
-            combined_results.extend(self.query_Subjects(query_text, data))
+            combined_results.extend(self.query_Subjects(query_text, data, range=range))
         if(type == FetchingType.All or type == FetchingType.Answers):
             answerResults = self.query_Answers(query_text, data)
             combined_results = self.combine_arrays_no_overlap(combined_results, answerResults)

@@ -19,6 +19,7 @@ class Database:
   vectordb_name = "NewPipeChroma"
   embeddings = None
   con = None
+  range = Range.Tiny
   
   def __init__(self, embed:Embedding):
         if embed is not None:
@@ -65,18 +66,21 @@ class Database:
             print("Database connection closed")
         else:
             print("No database connection to close")
-  def get_vector_store(self) -> Chroma | None:
+  def get_vector_store(self, range=None) -> Chroma | None:
       # Load vector store if not already set
       if Database.vector_store is None and self.embeddings is not None:
-          if os.path.exists(self.vectordb_folder):
-              Database.vector_store = Chroma(
-                  persist_directory=self.vectordb_folder,
-                  embedding_function=self.embeddings.get_embeddings(),
-              )
-              print("Vector store loaded from disk")
-          else:
-              print("No vector store found on disk")
-              return None
+        if range is not None:
+          names = self.getNameBasedOnRange(range)
+          self.vectordb_folder = names[1]
+        if os.path.exists(self.vectordb_folder):
+            Database.vector_store = Chroma(
+                persist_directory=self.vectordb_folder,
+                embedding_function=self.embeddings.get_embeddings(),
+            )
+            print("Vector store loaded from disk")
+        else:
+            print("No vector store found on disk")
+            return None
       return Database.vector_store
 
   def setup_bm25_retriever(self, docs=None) -> BM25Retriever | None:
