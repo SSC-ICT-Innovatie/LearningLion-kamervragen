@@ -70,8 +70,8 @@ class Query:
             # Close the cursor and database connection
             # Assuming fields like `text` and `metadata` exist in `Document`
             json_ready_results.append({
-                "text": getattr(result, "page_content", ""),  # Replace with the actual text attribute
-                "metadata": getattr(result, "metadata", {}),  # Replace with the actual metadata attribute
+                "text": getattr(result, "page_content", ""),
+                "metadata": getattr(result, "metadata", {}),
                 "answer": item[0] if item else None
             })
         data.close_database_connection()
@@ -87,7 +87,13 @@ class Query:
             raise ValueError("BM25C retriever is not set in the database")
         CResults = bm25C.invoke(query_text)
         combined_results = self.combine_arrays_no_overlap(AResults, CResults)
-        return combined_results
+        json_ready_results = []
+        for result in combined_results:
+            json_ready_results.append({
+                "text": getattr(result, "page_content", ""),
+                "metadata": getattr(result, "metadata", {}),
+            })
+        return json_ready_results
         
     def query(self, query_text, type=FetchingType.All, range=Range.Tiny):
         embed = Embedding()
