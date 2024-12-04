@@ -38,6 +38,8 @@ class Query:
         elif hasattr(item, 'metadata') and isinstance(item.metadata, dict):
             return item.metadata['UUID']
         return None  # Return None if the structure is unexpected
+    
+    
     def combine_arrays_no_overlap(self, a,b):
         arr = []
         b_uuids = {self.get_uuid(item) for item in b if self.get_uuid(item) is not None}
@@ -47,6 +49,8 @@ class Query:
                 arr.append(i)
         arr.extend(b)
         return arr  
+    
+    
     def query_Answers(self, query_text, data: database.Database):
         results = self.ensemble_retriever.invoke(query_text)
         for doc in results:
@@ -89,8 +93,15 @@ class Query:
         combined_results = self.combine_arrays_no_overlap(AResults, CResults)
         json_ready_results = []
         for result in combined_results:
+            UUID = self.get_uuid(result)
+            db_connection = data.get_database_connection()
+            cursor = db_connection.cursor()
+            cursor.execute("SELECT content FROM documents WHERE UUID = ?", (UUID,))
+            item = cursor.fetchone()
+            data.close_database_connection()
+            text = item[0]
             json_ready_results.append({
-                "text": getattr(result, "page_content", ""),
+                "text": text,
                 "metadata": getattr(result, "metadata", {}),
             })
         return json_ready_results
