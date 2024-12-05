@@ -50,12 +50,12 @@ class Query:
     def combine_arrays_no_overlap(self, a,b):
         arr = []
         b_uuids = {self.get_uuid(item) for item in b if self.get_uuid(item) is not None}
-        print(a)
         for i in a:
             uuid = self.get_uuid(i)
             if uuid and uuid not in b_uuids:
                 arr.append(i)
         arr.extend(b)
+        arr = self.filter_duplicates(arr)
         return arr  
     
     
@@ -65,7 +65,9 @@ class Query:
 
         for item in a:
             uuid = self.get_uuid(item)
+            print(f"UUID: {uuid}")
             question_number = self.get_metadata(item).get('question_number', None)
+            print(f"Question Number: {question_number}")
 
             if uuid and (uuid, question_number) not in seen_entries:
                 result.append(item)
@@ -135,7 +137,8 @@ class Query:
             answerResults = self.query_Answers(query_text, data)
             answerResults = self.filter_duplicates(answerResults)
             combined_results = self.combine_arrays_no_overlap(combined_results, answerResults)
-        
+            
+        combined_results = self.filter_duplicates(combined_results)
         print(f"Got {len(combined_results)} results")
         return combined_results
 
