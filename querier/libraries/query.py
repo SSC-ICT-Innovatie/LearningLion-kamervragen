@@ -39,10 +39,18 @@ class Query:
             return item.metadata['UUID']
         return None  # Return None if the structure is unexpected
     
+    def get_metadata(self, item):
+        """Helper function to extract the UUID from either structure."""
+        if isinstance(item, dict):
+            return item['metadata']
+        elif hasattr(item, 'metadata') and isinstance(item.metadata, dict):
+            return item.metadata
+        return None  # Return None if the structure is unexpected
     
     def combine_arrays_no_overlap(self, a,b):
         arr = []
         b_uuids = {self.get_uuid(item) for item in b if self.get_uuid(item) is not None}
+        print(a)
         for i in a:
             uuid = self.get_uuid(i)
             if uuid and uuid not in b_uuids:
@@ -50,6 +58,20 @@ class Query:
         arr.extend(b)
         return arr  
     
+    
+    def filter_duplicates(self, a):
+        seen_entries = set()
+        result = []
+
+        for item in a:
+            uuid = self.get_uuid(item)
+            question_number = self.get_metadata(item).get('question_number', None)
+
+            if uuid and (uuid, question_number) not in seen_entries:
+                result.append(item)
+                seen_entries.add((uuid, question_number))
+
+        return result
     
     def query_Answers(self, query_text, data: database.Database):
         results = self.ensemble_retriever.invoke(query_text)
@@ -78,10 +100,13 @@ class Query:
         if bm25A is None:
             raise ValueError("BM25A retriever is not set in the database")
         AResults = bm25A.invoke(query_text)
+        AResults = self.filter_duplicates(AResults)
+        
         bm25C = data.get_bm25C_retriever(range=range)
         if bm25C is None:
             raise ValueError("BM25C retriever is not set in the database")
         CResults = bm25C.invoke(query_text)
+        CResults = self.filter_duplicates(CResults)
         combined_results = self.combine_arrays_no_overlap(AResults, CResults)
         json_ready_results = []
         for result in combined_results:
@@ -108,8 +133,9 @@ class Query:
             combined_results.extend(self.query_Subjects(query_text, data, range=range))
         if(type == FetchingType.All or type == FetchingType.Answers):
             answerResults = self.query_Answers(query_text, data)
+            answerResults = self.filter_duplicates(answerResults)
             combined_results = self.combine_arrays_no_overlap(combined_results, answerResults)
-            
+        
         print(f"Got {len(combined_results)} results")
         return combined_results
 
