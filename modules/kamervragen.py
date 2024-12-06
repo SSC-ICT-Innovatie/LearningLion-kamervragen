@@ -34,6 +34,7 @@ class KamerVragenModule:
         fetchedFiles = []
         ministersentiment = ""
         nieuwsfeiten = ""
+        inleiding = ""
         print("Data: ", data)
         if "range" in data:
             if data["range"] not in Range.__members__:
@@ -60,7 +61,6 @@ class KamerVragenModule:
           print("message is found")
           message = data["message"]
           print(f"Message: {message}")
-        
         if "departmentSentiment" in message:
             ministersentiment = message["departmentSentiment"]
             app.logger.info(f"departmentSentiment: {ministersentiment}")
@@ -68,15 +68,16 @@ class KamerVragenModule:
             nieuwsfeiten = message["news"]
             app.logger.info(f"news: {nieuwsfeiten}")
         if "inleiding" in message and "vragen" in message:
+            inleiding = message["inleiding"]
             data["prompt"] = f"{message['inleiding']} {message['vragen']}"
         app.logger.info(f"Prompt: {data['prompt']}")
 
         systemPrompt = f"""
-    You are a RAG assistant. Je beantwoord vragen uit de prompt op basis van informatie die je krijgt uit eerdere beantwoordingen.
+You are a RAG assistant. Je beantwoord vragen uit de prompt op basis van informatie die je krijgt uit eerdere beantwoordingen.
 Houd je nauwkeurig aan de context. Verzin geen informatie die je niet weet (don't hallucinate). Als je onvoldoende informatie hebt om de vragen te beantwoorden, antwoord je met:
 "Ik heb onvoldoende informatie om de vragen te beantwoorden."
 Je antwoordt vanuit de rol van minister.
-De informatie (context) is:
+De informatie welke je kunt gebruiken voor de beantwoording (je context) is:
 - Het standpunt van de minister: {ministersentiment},
 - Relevante nieuwsfeiten: {nieuwsfeiten}
 - Relevante eerder beantwoordde kamervragen: {fetchedFiles}
@@ -94,7 +95,11 @@ Het Openbaar Ministerie gaat vier personen vervolgen. Deze vier personen moeten 
 Vraag 6
 Hoe kijkt u naar de uitlatingen van politiemensen bij het tankstation in Meppel die tegen demonstranten zeiden: «als jullie niet weggaan zijn de risico’s voor jullie zelf», en vervolgens wegreden? Zijn deze politiemensen disciplinair gestraft? Zo nee, bent u bereid om de politie te vragen om een disciplinair onderzoek te starten naar deze agenten?
 etc.
+-einde voorbeeld-
+Je geeft dus per subvraag uit de user prompt de vraag terug met het bijbehorende antwoord.
+De inleiding (met het thema) van de kamervraag is {inleiding}
 """
+
 
         filename = None
         if ',' in model:
@@ -103,7 +108,7 @@ etc.
             model = model[0]
 
         AIresponse = infer_run_local(
-            data["prompt"], files=fetchedFiles, systemPrompt=systemPrompt, LLM=model, filename=filename
+            data["prompt"], files=fetchedFiles, systemPrompt=systemPrompt, LLM=model, filename=filename, 
         )
         app.logger.info(f"AI response: {AIresponse}")
         return jsonify({"prompt": data["prompt"], "output": AIresponse})
