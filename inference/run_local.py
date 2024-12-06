@@ -35,8 +35,9 @@ def infer_run_local(prompt,
             "content": f"prompt: {prompt} \n\n\nrelevant files: {files}"
           },
         ]
-        receive = requests.post(domain, 
-        json = {'prompt': json.dumps(prompt)}, 
+        receive = requests.post(f"{domain}?timeout=3600", 
+        json = {'prompt': json.dumps(prompt),
+                }, 
         headers={'Authorization':api_key})
         output = receive.json()['result']['output']
         print(f"API response: {output}")
