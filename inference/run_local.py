@@ -1,5 +1,8 @@
-from inference.libraries.infere import Infer
+import os
 
+import requests
+from inference.libraries.infere import Infer
+from dotenv import load_dotenv
 inference_Global = None
 
 def infer_run_local(prompt,
@@ -10,6 +13,23 @@ def infer_run_local(prompt,
                     generation_kwargs=None,
                     filename=None,
                     no_quantized=False):
+  
+  loaded = load_dotenv()
+  if(loaded):
+    print("Loaded .env file")
+    domain = os.getenv("DOMAIN")
+    api_key = os.getenv("API_KEY")
+    if(domain is not None):
+      if(api_key is not None):
+        # fetch inference response from API
+        print("Place request to API")
+        receive = requests.post(domain, 
+        json = {'prompt': prompt}, 
+        headers={'Authorization':api_key})
+        output = receive.json()['result']['output']
+        print(f"API response: {output}")
+        return output
+  
   global inference_Global
   gpuBanlist = ["PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed","PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed"]
   
