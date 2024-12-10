@@ -11,9 +11,10 @@ class Query:
     def __init__(self):
         print("Query class initialized")
 
-    def setup_querier(self, database: database.Database, range=Range.Tiny):
+    def setup_querier(self, database: database.Database):
         print("Setting up ensemble retriever")
-
+        range = database.range
+        print(f"Range: {range}")
         # Retrieve the Chroma vector store
         chroma_vectorstore = database.get_vector_store(range=range)
         if chroma_vectorstore is None:

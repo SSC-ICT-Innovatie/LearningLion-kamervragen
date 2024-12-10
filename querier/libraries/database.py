@@ -42,6 +42,7 @@ class Database:
             Database.con = sqlite3.connect(f"{names[0]}.db", detect_types=sqlite3.PARSE_DECLTYPES)
             self.vectordb_name = names[0]
             self.vectordb_folder = names[1]
+            Database.range = range
       
       # Initialize Chroma and save it
       Database.vector_store = Chroma(

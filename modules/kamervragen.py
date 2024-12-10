@@ -113,17 +113,19 @@ De inleiding (met het thema) van de kamervraag is {inleiding}
         app.logger.info(f"AI response: {AIresponse}")
         return jsonify({"prompt": data["prompt"], "output": AIresponse})
 
-    def query(app, data, defaultRange=Range.Tiny):
+    def query(app, data, range=Range.Tiny):
         """
         Query the stores for the given prompt
         Query is promised
         """
-        _range = defaultRange
+        _range = range
         if "range" in data:
             if data["range"] not in Range.__members__:
                 return jsonify({"error": "Invalid range"})
             _range = Range[data["range"]]
-        app.logger.info("Using range: {range.name}")
+        app.logger.info(f"Using range: {range.name}")
+        app.logger.info(f"Using range: {_range.name}")
+        print("USING RANGE ", _range)
         documents = run_local_query_stores(data["query"],data["subject"], range=_range)
         app.logger.info(f"Documents: {documents}")
         return jsonify({"query": data["query"], "documents": documents})

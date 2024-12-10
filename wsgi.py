@@ -80,6 +80,13 @@ LLMModels = [
     "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-q5_k_m.gguf",
     "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-f16.gguf",
 ]
+
+datascopes = [
+    "Tiny",
+    "Medium",
+    "Large"
+
+]
     
 def doesSpecialtyExist(name: str) -> bool:
     return name in Specialty.__members__
@@ -93,10 +100,12 @@ def doesLLMModelExist(name: str) -> bool:
     return name in LLMModels
 
 @app.route('/llmmodels', methods=['GET'])
-
 def llmmodels():
     return jsonify(LLMModels)
 
+@app.route('/datascopes', methods=['GET'])
+def GetDatascopes():
+    return jsonify(datascopes)
 
 @app.route('/init', methods=['POST'])
 
@@ -174,8 +183,14 @@ def query():
         return jsonify({"error": "No specialty provided"})
     if doesSpecialtyExist(data["specialty"]) is False:
         return jsonify({"error": "Invalid specialty"})
+    if("scope" in data):
+        print(f"Range: {data['scope']}")
+        if data["scope"] not in Range.__members__:
+            return jsonify({"error": "Invalid range"})
+        _range = Range[data["scope"]]
+        app.logger.info(f"Using range: {_range.name}")
     if data["specialty"] == "KamerVragen":
-        return KamerVragenModule.query(app, data)
+        return KamerVragenModule.query(app, data, range=_range)
     
 @app.route('/llm', methods=['POST'])
 
@@ -196,12 +211,13 @@ def infer():
     if doesSpecialtyExist(data["specialty"]) is False:
         return jsonify({"error": "Invalid specialty"})
     specialty = data["specialty"]
-    if "model" in data:
-        if doesLLMModelExist(data["model"]):
-            model = data["model"]
-        else:
-            print(f"Invalid model: {data['model']}")
-            return jsonify({"error": "Invalid model"})
+    # Always use the default model for now
+    # if "model" in data:
+    #     if doesLLMModelExist(data["model"]):
+    #         model = data["model"]
+    #     else:
+    #         print(f"Invalid model: {data['model']}")
+    #         return jsonify({"error": "Invalid model"})
     systemPrompt = None
     if "systemPrompt" in data:
         systemPrompt = data["systemPrompt"]
