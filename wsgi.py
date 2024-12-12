@@ -52,7 +52,7 @@ def after_request(response):
     response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
     return response
 
-defaultLLMModel = "BramVanRoy/fietje-2-chat"
+defaultLLMModel = "llama3.2:3b"
 
 @app.route('/')
 def index():
@@ -154,7 +154,7 @@ def document():
     uuid = getParams.get('uuid')  # Fetch UUID safely
     if not uuid:
         return "UUID parameter is missing", 400  # Bad request if UUID is missing
-    pdf_data = getDocumentBlobFromDatabase(uuid)
+    pdf_data = getDocumentBlobFromDatabase(uuid, range=Range.Large)
     if pdf_data is None:
         return "Document not found", 404  # Not found if UUID does not exist
 

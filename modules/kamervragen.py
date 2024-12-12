@@ -28,6 +28,7 @@ class KamerVragenModule:
         defaultRange=Range.Tiny,
         model="BramVanroy/fietje-2-chat",
         systemPrompt=None,
+        noOllama=False,
     ):
         files = []
         _range = defaultRange
@@ -98,6 +99,8 @@ etc.
 -einde voorbeeld-
 Je geeft dus per subvraag uit de user prompt de vraag terug met het bijbehorende antwoord.
 De inleiding (met het thema) van de kamervraag is {inleiding}
+
+Genereer altijd in het nederlands!
 """
 
 
@@ -108,7 +111,7 @@ De inleiding (met het thema) van de kamervraag is {inleiding}
             model = model[0]
 
         AIresponse = infer_run_local(
-            data["prompt"], files=fetchedFiles, systemPrompt=systemPrompt, LLM=model, filename=filename, 
+            data["prompt"], files=fetchedFiles, systemPrompt=systemPrompt, LLM=model, filename=filename, noOllama=noOllama
         )
         app.logger.info(f"AI response: {AIresponse}")
         return jsonify({"prompt": data["prompt"], "output": AIresponse})

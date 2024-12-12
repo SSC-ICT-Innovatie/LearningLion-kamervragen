@@ -114,11 +114,12 @@ class Query:
         json_ready_results = []
         for result in combined_results:
             UUID = self.get_uuid(result)
-            db_connection = data.get_database_connection()
+            db_connection = data.get_database_connection(range=Range.Large)
             cursor = db_connection.cursor()
             cursor.execute("SELECT content FROM documents WHERE UUID = ?", (UUID,))
             item = cursor.fetchone()
             data.close_database_connection()
+            print(f"uuid is {UUID}")
             text = item[0]
             json_ready_results.append({
                 "text": text,
@@ -129,6 +130,8 @@ class Query:
     def query(self, query_text, type=FetchingType.All, range=Range.Tiny):
         embed = Embedding()
         data = database.Database(embed)
+        print(f"range {range}")
+        data.setup_database(range=range)
         combined_results = []
         print(f"Querying: {query_text}")
         print(f"Type: {type.name}")
