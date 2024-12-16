@@ -8,6 +8,9 @@ from data_classes.range_enum import Range
 from classes.kamervragen import KamerVragen
 
 class Deployment:
+    """
+    De UbiOps deployment klasse
+    """
     def __init__(self, base_directory=None, context=None):
         print("Datafetcher class initialized")
     

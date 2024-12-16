@@ -3,6 +3,9 @@ from infere import Infer
 
 
 class Deployment:
+  """
+  De UbiOps deployment klasse voor het praten tegen een LLM
+  """
   inference = None
   def __init__ (self, base_directory=None, context=None):
     modelname = os.getenv("MODEL_NAME", "BramVanroy/fietje-2-chat")

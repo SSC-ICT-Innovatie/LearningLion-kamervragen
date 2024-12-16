@@ -16,6 +16,9 @@ from DataFetcher.libraries.data_classes.range_enum import Range
 from DataFetcher.libraries.interface.dataSource import dataSource
 
 class KamerVragen(dataSource):
+    """
+        Haalt data op van de Tweede Kamer API
+    """
     url = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0/Document?$filter=Verwijderd eq false and Soort eq 'Antwoord schriftelijke vragen'"
     urlLIMITED = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0/Document?$filter=Verwijderd eq false and Soort eq 'Antwoord schriftelijke vragen' and (year(DatumRegistratie) eq 2024 and month(DatumRegistratie) ge 1 and day(DatumRegistratie) ge 1) and (year(DatumRegistratie) eq 2024 and month(DatumRegistratie) lt 9)"
     urlLIMITEDFirst = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0/Document?$filter=Verwijderd eq false and Soort eq 'Antwoord schriftelijke vragen' and (year(DatumRegistratie) eq 2022 and month(DatumRegistratie) ge 1 and day(DatumRegistratie) ge 1) and (year(DatumRegistratie) lt 2024)"
@@ -36,13 +39,23 @@ class KamerVragen(dataSource):
     bucketName = "kamervragen"
     
     def __init__(self, limit, bucketname = None):
+        """
+        Iniantiseerd de klasse
+        
+        :param limit: Het aantal items dat opgehaald moet worden
+        :param bucketname: De naam van de bucket waar de bestanden in opgeslagen moeten
+        """
         self.limit = limit
         self.totalItems = 0
         if bucketname:
             self.bucketName = bucketname
     
     def _fetchDataPagenated(self, url):
-        """Fetch data from the API pagenated"""
+        """
+        Haalt de data op van de volgende pagina
+        
+        :param url: De url van de volgende pagina
+        """
         print("Fetching pagenated data")
         response = requests.get(url)
         thread = None
@@ -68,10 +81,14 @@ class KamerVragen(dataSource):
                     if(thread is None and rawData.get('@odata.nextLink')):
                         self._fetchDataPagenated(rawData.get('@odata.nextLink'))
             
-
-                    
     def _fetchKamerVragenData(self, rawData, downloadFile = True, path=None):
-        """Construct a KamerVragenData object from the raw data"""
+        """
+        Haalt de data op van een item
+        
+        :param rawData: De data van het item
+        :param downloadFile: Of het bestand gedownload moet worden
+        :param path: De locatie waar het bestand opgeslagen moet worden
+        """
         if(self.limitDisabled is False and len(self.dataitems) > self.limit):
             return
         dataitem = KamerVragenData(rawData['Id'], rawData['GewijzigdOp'], rawData['Verwijderd'], rawData['Datum'], rawData['Soort'])
@@ -80,7 +97,9 @@ class KamerVragen(dataSource):
         return dataitem
     
     def fetchAllData(self):
-        """Fetch all data from the API. The limit parameter is used to limit the amount of items fetched can be go over the limit due to multithreading"""
+        """
+        Haaalt alle data op van de API
+        """
         if(self.limit < 1):
             self.limitDisabled = True
         response = requests.get(self.urlLIMITED)
@@ -114,7 +133,9 @@ class KamerVragen(dataSource):
         return self.dataitems
       
     def fetchFile(self, fileId, path=None):
-        """Download a single file from the API"""
+        """
+        Haalt een bestand op van de API
+        """
         sidecar_csv = "metadata.csv"
         
         if path is None:
@@ -206,7 +227,7 @@ class KamerVragen(dataSource):
         
         
     def getTotalItemsInApi(self):
-        """Fetch the total number of items in the API"""
+        """Haalt het totaal aantal items op van de API"""
         url = self.urlLIMITED
         while url:
             response = requests.get(url)
@@ -226,7 +247,7 @@ class KamerVragen(dataSource):
 
 
     def getAllTypes(self, url=None, downloadFiles=False, downloadTypes=None, range=Range.Large):
-        """Fetch all types of Kamervragen and download the files"""
+        """Haalt alle soorten op van de API"""
         
         if range == Range.All:
             url = self.urlAfter2010
@@ -277,7 +298,9 @@ class KamerVragen(dataSource):
 
         
     def exit(self):
-        """Join all threads before exiting"""
+        """
+        Sluit de threads af
+        """
         for thread in self.threads:
             thread.join()
         print("All threads joined")

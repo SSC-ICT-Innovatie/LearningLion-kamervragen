@@ -168,3 +168,4 @@ docs
 /vectordb_Tiny
 *.db
 /temp_model
+/_docs/_build

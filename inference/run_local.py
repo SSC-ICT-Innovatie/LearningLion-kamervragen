@@ -10,6 +10,12 @@ import queue
 inference_Global = None
 
 def ollama_infer_run_local(messages, model='llama2'):
+    """
+    Het uitvoeren van een Ollama inferentie lokaal
+    
+    :param messages: de berichten die moeten worden gegeven aan Ollama
+    :param model: het model dat moet worden gebruikt
+    """
     try:
         print(f"Recived: {messages}")
         response = ollama.chat(model=model, messages=messages)
@@ -28,6 +34,22 @@ def infer_run_local(prompt,
                     filename=None,
                     no_quantized=False,
                     noOllama=False):
+    
+    """
+    het uitvoeren van een inferentie lokaal
+    
+    Als er een API in de .env is ingesteld, wordt deze ook gebruikt voor inferentie
+    
+    :param prompt: de prompt die moet worden gegeven aan het model
+    :param chatlog: het chatlog dat moet worden gegeven aan het model
+    :param files: de bestanden die moeten worden gegeven aan het model
+    :param LLM: het model dat moet worden gebruikt
+    :param systemPrompt: het systeem prompt dat moet worden gegeven aan het model
+    :param generation_kwargs: de generatie argumenten die moeten worden gegeven aan het model
+    :param filename: de naam van het bestand dat moet worden gegeven aan het model
+    :param no_quantized: of het model niet moet worden gekwantiseerd
+    :param noOllama: of Ollama niet moet worden gebruikt
+    """
     # Load environment variables
     load_dotenv()
     domain = os.getenv("DOMAIN")

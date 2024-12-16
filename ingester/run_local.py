@@ -3,6 +3,9 @@ from ingester.libraries import database, ingestion
 from ingester.libraries.embedding import Embedding
 
 def run_local_ingest_stores(range=Range.Tiny, modelname="textgain/allnli-GroNLP-bert-base-dutch-cased"):
+  """
+  Voer het ingesten van de data lokaal uit.
+  """
   print("Running Main class")
   # Initialize components
   embed = Embedding()

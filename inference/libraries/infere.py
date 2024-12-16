@@ -8,9 +8,20 @@ from huggingface_hub import snapshot_download
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 class Infer:
+    """
+    De inferentie klasse voor het praten tegen een LLM
+    """
     system_prompt = """Je bent een vriendelijke chatbot genaamd Learning Lion. Je wilt altijd graag vragen beantwoorden en blijft altijd vriendelijk. Alle informatie die jij vertelt komt uit de bestanden die zijn bijgevoegd, mochten de bestanden niet bestaan of onvoldoende informatie bevatten dan zeg je 'ik weet het niet' of 'ik kan je niet helpen'."""
 
     def __init__(self, model_name_or_path, filename="model.gguf", device_map="auto", no_quantized=False):
+        """
+        Initialisatie van de inferentie klasse
+        
+        :param model_name_or_path: de naam of het pad van het model
+        :param filename: de naam van het bestand
+        :param device_map: de device map
+        :param no_quantized: of het model gekwantiseerd is
+        """
         self.model_name_or_path = model_name_or_path
         self.filename = filename
         self.device_map = device_map
@@ -23,7 +34,7 @@ class Infer:
 
     def load_model(self):
         """
-        Load a quantized or non-quantized model and its tokenizer.
+        Laad het model en de tokenizer
         """
         if "GGUF" in self.model_name_or_path:
             raise ValueError("GGUF models are not supported in this implementation.")
@@ -56,7 +67,7 @@ class Infer:
 
     def _ensure_model_downloaded(self):
         """
-        Ensure the model is downloaded or accessible locally.
+        Wees er zeker van dat het model is gedownload
         """
         if os.path.exists(self.model_name_or_path):
             return self.model_name_or_path
@@ -73,14 +84,16 @@ class Infer:
 
     def _detect_quantization(self):
         """
-        Detect whether the model is quantized based on specific files or metadata.
+        Detecteer of het model gekwantiseerd is.
         """
         quantized_file = os.path.join(self.model_name_or_path, "quantized_config.json")
         return os.path.exists(quantized_file)
 
     def parse_chatlog(self, chatlog):
         """
-        Parse the chatlog string into a structured conversation format.
+        Verwerk de chatlog naar een bruikbare vorm met rollen en berichten.
+        
+        :param chatlog: de chatlog
         """
         parsed_conversation = []
         entries = chatlog.split("map[")
@@ -95,7 +108,12 @@ class Infer:
 
     def _construct_conversation(self, prompt, chatlog=None, files=None, system_prompt=None):
         """
-        Construct the conversation in the required format.
+        Construeer een conversatie met de rollen en berichten.
+        
+        :param prompt: de prompt
+        :param chatlog: de chatlog
+        :param files: de bestanden
+        :param system_prompt: het eerste bericht van het systeem
         """
         system_prompt = system_prompt or self.system_prompt
         conversation = [{"role": "system", "content": system_prompt}]
@@ -112,7 +130,13 @@ class Infer:
 
     def predict(self, prompt, chatlog=None, files=None, system_prompt=None, generation_kwargs=None):
         """
-        Predict a response using the loaded model.
+        Voorspel een reactie op een prompt.
+        
+        :param prompt: de prompt
+        :param chatlog: de chatlog
+        :param files: de bestanden
+        :param system_prompt: het systeem prompt
+        :param generation_kwargs: de generatie argumenten
         """
         if not self.model or not self.tokenizer:
             raise ValueError("Model and tokenizer must be loaded first.")
