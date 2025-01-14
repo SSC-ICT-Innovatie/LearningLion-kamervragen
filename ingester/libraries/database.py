@@ -1,3 +1,7 @@
+"""
+dit document bevat de database class die gebruikt wordt in de ingester.
+"""
+
 import pickle
 import sqlite3
 from langchain_chroma import Chroma
@@ -20,6 +24,9 @@ class Database:
   range = Range.Tiny
   
   def __init__(self, embed:Embedding, range=Range.Tiny):
+        """
+            inialiseer de database klasse
+        """
         if embed is not None:
             self.embeddings = embed
         else:
@@ -28,10 +35,16 @@ class Database:
         print("Database class initialized")
 
   def getNameBasedOnRange(self, range=Range.Tiny):
+        """
+            Haal de database naam op basis van de range
+        """
         if self.range is not None:
             return (f"NewPipeChroma_{range.name}", f"vectordb_{range.name}")
   
   def setup_database(self,range=Range.Tiny):
+      """
+        maak de database klaar voor gebruik
+      """
       if range is not None:
             print(f"Setting up database with range {range}")
             names = self.getNameBasedOnRange(range)
@@ -48,6 +61,9 @@ class Database:
           collection_metadata={"hnsw:space": "cosine"}
       )
   def apply_database_schema(self):
+        """
+            pas het schema toe op de database
+        """
         # Apply schema to database
         con = self.get_database_connection()
         cursor = con.cursor()
@@ -99,6 +115,9 @@ class Database:
         print("Database schema applied")
         con.close()
   def insertDocument(self, uuid, filename, doc_subject, doc_producer, full_text, blobData, summirized, questions, answers, footnotes, apiUploadDate):
+        """
+            voeg een document toe aan de database
+        """
         con = self.get_database_connection()
         # Check if document already exists
         results = con.execute("SELECT * FROM documents WHERE UUID=?", (uuid,)).fetchall()
@@ -127,6 +146,9 @@ class Database:
             con.close()
 
   def getDocument(self, uuid):
+        """
+            Haal een document op uit de database
+        """
         con = self.get_database_connection()
         document = con.execute("SELECT * FROM documents WHERE UUID=?", (uuid,)).fetchone()
         con.close()
@@ -136,6 +158,9 @@ class Database:
             print(f"No document found with UUID {uuid}")
             return None
   def getQuestion(self, uuid, questionNumber):
+        """
+            Haal een vraag op uit de database
+        """
         con = self.get_database_connection()
         question = con.execute("SELECT * FROM questions WHERE UUID=? AND QUESTIONNUMBER=?", (uuid, questionNumber)).fetchone()
         con.close()
@@ -146,6 +171,9 @@ class Database:
             return None
       
   def get_database_connection(self) -> sqlite3.Connection:
+        """
+            Haal de database connectie op
+        """
         con = None
         print("No database connection set")
         if self.vectordb_name is not None:
@@ -158,6 +186,9 @@ class Database:
         return con
     
   def get_vector_store(self) -> Chroma | None:
+      """
+            Haal de vector store op
+      """
       # Load vector store if not already set
       if Database.vector_store is None and self.embeddings is not None:
           if os.path.exists(self.vectordb_folder):
@@ -172,6 +203,9 @@ class Database:
       return Database.vector_store
 
   def setup_bm25_retriever(self, docs=None) -> BM25Retriever | None:
+      """
+            Maak de BM25 retriever klaar voor gebruik
+      """
       if docs is None:
           print("No documents to setup BM25 retriever")
           return
@@ -180,16 +214,25 @@ class Database:
       self.save_bm25_retriever()
       
   def set_bm25_retriever(self, bm25):
+      """
+        zet de bm25 retriever
+      """
       Database.bm25Retriever = bm25
       self.save_bm25_retriever()
 
   def get_bm25_retriever(self) -> BM25Retriever | None:
+      """
+        haal de bm25 retriever op
+      """
       if(Database.bm25Retriever is None):
           print("BM25 retriever is not set")
           raise ValueError("BM25 retriever is not set")
       return Database.bm25Retriever
 
   def save_bm25_retriever(self, filename="bm25_retriever.pkl"):
+      """
+        sla de bm25 retriever op als een bestand
+      """
       if Database.bm25Retriever is None:
           print("BM25 retriever not set, nothing to save.")
           return False
@@ -208,6 +251,9 @@ class Database:
 #       return True
 
   def upload_vector_store(self):
+      """
+        upload de vector store naar ubiops
+      """
       if Database.vector_store is None:
           print("Vector store not set, nothing to upload.")
           return False
@@ -226,6 +272,9 @@ class Database:
 #         return True
     
   def upload_bm25_retriever(self, filename="bm25_retriever.pkl"):
+      """
+        upload de bm25 retriever naar ubiops
+      """
       # Ensure BM25 retriever is saved first
       if not self.save_bm25_retriever(filename):
           print("Failed to save BM25 retriever, not uploading.")

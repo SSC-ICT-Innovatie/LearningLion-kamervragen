@@ -5,6 +5,9 @@ from querier.libraries.embedding import Embedding
 from querier.libraries.fetchingType import FetchingType
 
 def run_local_query_stores(prompt,subject=None,range=Range.Tiny):
+  """
+      Voer een query uit op de stores
+  """
   print("Querying stores")
   documents = []
   embed = Embedding()
@@ -21,6 +24,9 @@ def run_local_query_stores(prompt,subject=None,range=Range.Tiny):
   return documents
   
 def getDocumentBlobFromDatabase(UUID: str, range=Range.Tiny):
+    """
+      haal een pdf document op uit de database
+    """
     # Initialize the embedding and database objects
     embed = Embedding()
     data = database.Database(embed)

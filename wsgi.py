@@ -1,3 +1,7 @@
+"""
+Dit document is verantwoordelijk voor het opzetten van de Flask server en het verwerken van de requests.
+"""
+
 from enum import Enum
 import logging
 from logging.handlers import RotatingFileHandler
@@ -10,41 +14,49 @@ from querier.run_local import getDocumentBlobFromDatabase, run_local_query_store
 from inference.run_local import infer_run_local
 from flask_cors import CORS, cross_origin
 
+
+
 class RequestFilter(logging.Filter):
+    """
+        Het toevoegen van het IP-adres aan de logberichten.
+    """
     def filter(self, record):
         record.ip = request.remote_addr if request else "No-IP"
         return True
 
 
-
+# de standaard geselecteerde range is Tiny
 range = Range.Tiny
 app = Flask(__name__)
 
-# if not app.debug:  # Enable logging only in production mode
-# Create a file handler
+# Logger
 file_handler = RotatingFileHandler(
     'app.log', maxBytes=1024 * 1024 * 10, backupCount=5
 )  # Log file size = 10MB, keep 5 backups
 
-# Set logging level and format
-file_handler.setLevel(logging.INFO)  # Change to logging.DEBUG for debug info
+# Set log level
+file_handler.setLevel(logging.INFO)
+# De log formatering
 formatter = logging.Formatter(
     '%(asctime)s - %(ip)s - %(name)s - %(levelname)s - %(message)s'
 )
+# zet de formateering
 file_handler.setFormatter(formatter)
+# Toevoegen van het Ip adres aan de logberichten
 file_handler.addFilter(RequestFilter())
-# Add handler to Flask app logger
+# Voeg de file handler toe aan de logger
 app.logger.addHandler(file_handler)
+# Set the log level to INFO
 app.logger.setLevel(logging.INFO)
-
-# Log that logging has started
+# Log dat het is opgezet
 app.logger.info('Logging is set up.')
 
-
+# Sta CORS toe vanaf elk domein accepteerd de API requests
 CORS(app, resources={r"/*": {"origins": "*"}}, 
      allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning"])
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+# Voeg CORS headers toe aan de response
 @app.after_request
 def after_request(response):
     response.headers.add("Access-Control-Allow-Origin", "*")
@@ -52,25 +64,31 @@ def after_request(response):
     response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
     return response
 
+# Het standaard model is Llama3.2:3b
 defaultLLMModel = "llama3.2:3b"
 
+# De index route
 @app.route('/')
 def index():
     app.logger.info('Hello, World!')
     return {"Hello": "World"}
 
+# De hello route
 @app.route('/hello')
 def hello():
     return 'Hello, World'
 
-
+# De ping route
 @app.route('/ping')
 def ping():
     return {"pong"}
 
 class Specialty(Enum):
+    """
+    De verschillende specialiteiten die de API ondersteund.
+    """
     KamerVragen = 1
-    
+# ondersteunde LLM modellen
 LLMModels = [
     "Open-Orca/Mistral-7B-OpenOrca",
     "BramVanroy/fietje-2-chat",
@@ -81,35 +99,38 @@ LLMModels = [
     "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-f16.gguf",
 ]
 
+# De verschillende datascopes
 datascopes = [
     "Tiny",
     "Medium",
     "Large"
 
 ]
-    
+# Check of de specialiteit bestaat in de lijst van ondersteunde specialiteiten
 def doesSpecialtyExist(name: str) -> bool:
     return name in Specialty.__members__
 
+# De specialiteiten route
 @app.route('/specialties', methods=['GET'])
-
 def specialties():
     return jsonify([specialty.name for specialty in Specialty])
-
+# Check of het LLM model bestaat in de lijst van ondersteunde modellen
 def doesLLMModelExist(name: str) -> bool:
     return name in LLMModels
-
+# De LLM modellen route
 @app.route('/llmmodels', methods=['GET'])
 def llmmodels():
     return jsonify(LLMModels)
-
+# De datascopes route
 @app.route('/datascopes', methods=['GET'])
 def GetDatascopes():
     return jsonify(datascopes)
-
+# De init route
 @app.route('/init', methods=['POST'])
-
 def init():
+    """
+        initialisatie van de specialiteit
+    """
     if request.is_json is False:
         return jsonify({"error": "Invalid JSON"})
     data = request.get_json()
@@ -121,10 +142,12 @@ def init():
         return KamerVragenModule.initialize(app, data)
     return False
 
+# De prompt route
 @app.route('/prompt', methods=['POST'])
-
 def prompt():
-    # Access the JSON data sent in the request body
+    """
+        Roep de gehele applicatie aan zonder human in the loop
+    """
     data = request.get_json()
     if data is None:
         return jsonify({"error": "No data provided"})
@@ -147,9 +170,12 @@ def prompt():
         "documents": documents,
         "output": AIresponse
     })
+# De document route
 @app.route('/document', methods=['GET'])
-
 def document():
+    """
+        Haal het pdf document op uit de database
+    """
     getParams = request.args
     uuid = getParams.get('uuid')  # Fetch UUID safely
     if not uuid:
@@ -163,10 +189,12 @@ def document():
     response.headers['Content-Disposition'] = 'inline; filename="document.pdf"'
     
     return response
-
+# De query route
 @app.route('/query', methods=['POST'])
-
 def query():
+    """
+        voer een query uit op de database
+    """
     data = request.get_json()
     # log ip address
     app.logger.info(f"IP address: {request.remote_addr}")
@@ -191,10 +219,13 @@ def query():
         app.logger.info(f"Using range: {_range.name}")
     if data["specialty"] == "KamerVragen":
         return KamerVragenModule.query(app, data, range=_range)
-    
-@app.route('/llm', methods=['POST'])
 
+# llm route
+@app.route('/llm', methods=['POST'])
 def infer():
+    """
+        Voer een inference uit op de LLM
+    """
     model = defaultLLMModel
     data = request.get_json()
     app.logger.info(f"IP address: {request.remote_addr}")

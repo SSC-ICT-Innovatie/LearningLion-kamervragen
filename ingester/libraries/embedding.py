@@ -9,11 +9,17 @@ class Embedding:
       print("Embedding class initialized")
 
   def get_embeddings(self):
+    """
+        haal het embeddings model op
+    """
     if self.embeddings is None:
        return self.setup_embeddings()
     return self.embeddings
     
   def setup_embeddings(self,localModel=False, modelname="textgain/allnli-GroNLP-bert-base-dutch-cased"):
+    """
+        maak het embeddings model klaar
+    """
     print("Setting up embeddings")
     model_kwargs = {'device': 'cpu'}
     encode_kwargs = {'normalize_embeddings': False}

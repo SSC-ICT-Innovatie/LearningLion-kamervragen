@@ -1,3 +1,7 @@
+"""
+    Het document dat veranntwoordelijk is voor het verwerken van de data
+"""
+
 import traceback
 import zipfile
 import pymupdf
@@ -18,10 +22,16 @@ class Ingestion:
     text_splitter = None
     
     def __init__(self, base_directory=None, context=None):
+        """
+            Initialisatie van de Ingestion class
+        """
         self.setupTextSplitter()
         print("Ingestion class initialized")
     
     def request(self):
+        """
+            Voer een request uit
+        """
         try:
             self.ingest()
             return True
@@ -29,9 +39,15 @@ class Ingestion:
             return False
         
     def getTextSplitter(self):
+        """
+            haal de textsplitter op
+        """
         return self.text_splitter
 
     def setupTextSplitter(self):
+        """
+            initialiseer de textsplitter
+        """
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=100,
             chunk_overlap=20,
@@ -40,9 +56,15 @@ class Ingestion:
         )
 
     def convert_text_to_document(self, text):
+        """
+            Converteer de text naar een document klasse
+        """
         return Document(page_content=text)
     
     def download_files_fromUbiOps_bucket(self, url):
+        """
+            Download bestanden van een UbiOps bucket
+        """
         project_name = "learning-lion"
         bucket_items = url.split("/")
         bucket_items = list(filter(None, bucket_items))
@@ -59,6 +81,9 @@ class Ingestion:
         return output_dir
     
     def download_zip_only_fromUbiOps_bucket(self, url):
+        """
+            Download alleen zip bestanden van een UbiOps bucket
+        """
         project_name = "learning-lion"
         bucket_items = url.split("/")
         bucket_items = list(filter(None, bucket_items))
@@ -77,10 +102,16 @@ class Ingestion:
         return output_dir
     
     def summirize(self, text):
+        """
+            een samenvatting maken van de tekst
+        """
         # TODO: Implement summarization
         return "Summarized text"
 
     def ingest(self, source_dir=None, vector_store:Chroma|None=None, embeddings=None, database:Database|None =None):
+        """
+            Het verwerken van de data
+        """
         vector_store = vector_store
         # text_splitter = self.getTextSplitter()
         embeddings = embeddings
@@ -236,6 +267,8 @@ class Ingestion:
         
 
 def batch(iterable, batch_size):
-    """Yield successive batches of specified size from the iterable."""
+    """
+        Maak batches van de lijst
+    """
     for i in range(0, len(iterable), batch_size):
         yield iterable[i:i + batch_size]

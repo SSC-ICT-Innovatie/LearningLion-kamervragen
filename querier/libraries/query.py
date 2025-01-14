@@ -9,9 +9,15 @@ class Query:
     ensemble_retriever = None
 
     def __init__(self):
+        """
+        Initaliseer de query class
+        """
         print("Query class initialized")
 
     def setup_querier(self, database: database.Database):
+        """
+        maak de ensemble retriever aan
+        """
         print("Setting up ensemble retriever")
         range = database.range
         print(f"Range: {range}")
@@ -49,6 +55,9 @@ class Query:
         return None  # Return None if the structure is unexpected
     
     def combine_arrays_no_overlap(self, a,b):
+        """
+            combineer twee arrays zonder overlap
+        """
         arr = []
         b_uuids = {self.get_uuid(item) for item in b if self.get_uuid(item) is not None}
         for i in a:
@@ -61,6 +70,9 @@ class Query:
     
     
     def filter_duplicates(self, a):
+        """
+            filter dubbele items uit een array
+        """
         seen_entries = set()
         result = []
 
@@ -77,6 +89,9 @@ class Query:
         return result
     
     def query_Answers(self, query_text, data: database.Database):
+        """
+            Query de antwoorden
+        """
         results = self.ensemble_retriever.invoke(query_text)
         for doc in results:
             score = doc.metadata.get('score', None)
@@ -98,7 +113,11 @@ class Query:
         data.close_database_connection()
         # Filter combined results for no duplicates ids
         return json_ready_results
+    
     def query_Subjects(self, query_text, data: database.Database, range=Range.Tiny):
+        """
+            Query de onderwerpen
+        """
         bm25A = data.get_bm25A_retriever(range=range)
         if bm25A is None:
             raise ValueError("BM25A retriever is not set in the database")
@@ -128,6 +147,9 @@ class Query:
         return json_ready_results
         
     def query(self, query_text, type=FetchingType.All, range=Range.Tiny):
+        """
+            query de data
+        """
         embed = Embedding()
         data = database.Database(embed)
         print(f"range {range}")
@@ -147,4 +169,7 @@ class Query:
         return combined_results
 
     def get_ensemble_retriever(self):
+        """
+            haal de ensemble retriever op
+        """
         return self.ensemble_retriever

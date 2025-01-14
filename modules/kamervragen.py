@@ -1,3 +1,7 @@
+"""
+    Dit is een module voor kamervragen.
+"""
+
 from flask import jsonify
 from DataFetcher.libraries.data_classes.range_enum import Range
 from DataFetcher.run_local import run_local_datafetcher
@@ -10,7 +14,14 @@ from querier.run_local import run_local_query_stores
 
 class KamerVragenModule:
     def initialize(app, data):
+        """
+            initaliseer kamervragen dit bevat: 
+            - het ophalen
+            - het verwerken
+            van documenten
+        """
         try:
+            # Standaard is de range tiny
             range = Range.Tiny
             if "range" in data:
                 if data["range"] not in Range.__members__:
@@ -30,6 +41,9 @@ class KamerVragenModule:
         systemPrompt=None,
         noOllama=False,
     ):
+        """
+            Voer een inference uit op de LLM
+        """
         files = []
         _range = defaultRange
         fetchedFiles = []
@@ -43,6 +57,7 @@ class KamerVragenModule:
             _range = Range[data["range"]]
             app.logger.info(f"Using range: {_range.name}")
         if "files" in data:
+            # Als er bestanden zijn worden deze eerst opgehaald zodat het taalmodel deze kan gebruiken
             embeddings = Embedding()
             database = Database(embed=embeddings, range=_range)
             files = data["files"]
@@ -55,24 +70,27 @@ class KamerVragenModule:
                     file.get("uuid"), file.get("questionNumber")
                 )
                 fetchedFiles.append(fetchedData)
-
             app.logger.info(f"Question and answer: {fetchedFiles}")
         message = {}
         if "message" in data:
+            # Als er een message is wordt deze gebruikt om de context te bepalen
           print("message is found")
           message = data["message"]
           print(f"Message: {message}")
         if "departmentSentiment" in message:
+            # Als er een sentiment is wordt deze gebruikt om de context te bepalen
             ministersentiment = message["departmentSentiment"]
             app.logger.info(f"departmentSentiment: {ministersentiment}")
         if "news" in message:
+            # Als er nieuws is wordt deze gebruikt om de context te bepalen
             nieuwsfeiten = message["news"]
             app.logger.info(f"news: {nieuwsfeiten}")
         if "inleiding" in message and "vragen" in message:
+            # Als er een inleiding en vragen zijn wordt deze gebruikt om de context te bepalen
             inleiding = message["inleiding"]
             data["prompt"] = f"{message['inleiding']} {message['vragen']}"
         app.logger.info(f"Prompt: {data['prompt']}")
-
+# De system prompt
         systemPrompt = f"""
 You are a RAG assistant. Je beantwoord vragen uit de prompt op basis van informatie die je krijgt uit eerdere beantwoordingen.
 Houd je nauwkeurig aan de context. Verzin geen informatie die je niet weet (don't hallucinate). Als je onvoldoende informatie hebt om de vragen te beantwoorden, antwoord je met:
@@ -106,10 +124,12 @@ Genereer altijd in het nederlands!
 
         filename = None
         if ',' in model:
+            # als het model een , bevat dan wordt deze gesplitst (dit was nodig voor de guff mogelijkheid)
             model = model.split(',')
             filename = model[1]
             model = model[0]
 
+        # Roep de inferentie aan
         AIresponse = infer_run_local(
             data["prompt"], files=fetchedFiles, systemPrompt=systemPrompt, LLM=model, filename=filename, noOllama=noOllama
         )
@@ -118,8 +138,7 @@ Genereer altijd in het nederlands!
 
     def query(app, data, range=Range.Tiny):
         """
-        Query the stores for the given prompt
-        Query is promised
+            Voer een query uit op de databases
         """
         _range = range
         if "range" in data:

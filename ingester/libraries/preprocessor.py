@@ -36,35 +36,19 @@ class Preprocessor:
 			return os.path.basename(file_path)
 
 	def extract_footnotes(self, text:str):
+			"""
+				haal de tekst op die in de voetnoten staat
+   		"""
 			footnotePattern = re.compile(r'(\d+)\s+(.*?)(?=\d+\s|$)', re.DOTALL)
 
 			strings_with_numbers = []
 			footnotes = []
-
-			# matches = list(footnotePattern.finditer(text))
-			# strings_with_numbers.extend(matches)
-
-			# matches = footnotePattern.findall(text)
 			matches = list(footnotePattern.finditer(text))
 			for match in matches:
-					# Group 1 will contain the first part (e.g., "1 Ja")
-					# Group 2 will contain the second part (e.g., "1 Trouw 17 december 2011, «meeste crèches krijgen minder klantjes»")
-					# strings_with_numbers.append(match.group(1))
-
-					# Group 1 will contain the footnote number (e.g., "1")
 					footnote_number = match.group(1)
-
-					# Group 2 will contain the text associated with that footnote (e.g., "Financieel Dagblad ... 24 september 2014")
 					footnote_text = match.group(2).strip()
-
-					# Combine the footnote number and text into a single string, if needed
-					# combined_text = f"{footnote_number} {footnote_text}"
-
-					# Append to the list
 					strings_with_numbers.append(footnote_number)
 					strings_with_numbers.append(footnote_text)
-			# Now footnotes will contain the extracted pairs
-
 			footnote_index = 0
 			pages = []
 			current_page = []
@@ -72,17 +56,11 @@ class Preprocessor:
 			for string in strings_with_numbers:
 					if string is None:
 							continue
-					# Check if 's-Gravenhage 2014 is in the string
 					if '’s-Gravenhage' in string:
-							# If found, add the current page to pages
 							pages.append(current_page)
-							# Reset current_page for the next page
 							current_page = []
 					else:
-							# Otherwise, keep adding strings to the current page
 							current_page.append(string)
-			# textnexttopattern = re.compile(r'\d+\s+[^\d\s]')
-
 			for page in pages:
 					page.reverse()
 					passedItems = []
@@ -115,6 +93,9 @@ class Preprocessor:
 			return footnotes
 
 	def get_footer(self, text):
+			"""
+			Haal de voettekst op
+			"""
 
 			splitted = text.split(" ")
 			footer = []
@@ -131,16 +112,25 @@ class Preprocessor:
 			return ""
 
 	def get_question_number(self,text):
+		"""
+			Haal de vraagnummers op
+		"""
 		vraagnumber_pattern = r"Vraag (\d+(?:[ ,]en[ ,]\d+)*)" #TODO: add support for comma seperated numbers
 		vraagnumbers = re.findall(vraagnumber_pattern, text)
 		return vraagnumbers
 	def get_footnote_number(self,text):
+		"""
+			Haal de voetnootnummers op
+		"""
 		footnotenumber_pattern = r"(\d+)"
 		footnotenumbers = re.findall(footnotenumber_pattern, text)
 		return footnotenumbers[0]
 
 
 	def get_question_and_answer(self, text):
+					"""
+					Haal de vragen en antwoorden op
+					"""
 					# footer = self.get_footer(text)
 					# pages = self.get_amount_of_pages(text,footer)
 					# text = self.remove_footer_and_pagenumbers(text,footer,pages)
@@ -164,6 +154,9 @@ class Preprocessor:
 					return [questions, answers]
         
 	def get_context(self,text):
+			"""
+				haal de inleiding op
+   		"""
 			# Pattern to find the first multi-digit number (1 or more digits) and everything up to the first question
 			pattern = re.compile(r'\s*((?:(?!Vraag\s\d).)*?)(Vraag\s\d)', re.DOTALL)
 			match = pattern.search(text)
@@ -176,20 +169,32 @@ class Preprocessor:
 					return None
 				
 	def remove_footnotes(self, text, footnotes):
+			"""
+			Haal de voetnoten uit de tekst
+			"""
 			for footnote in footnotes:
 					text = text.replace(footnote, "")
 			return text.strip()
 
 	def get_amount_of_pages(self, text, footer):
+			"""
+			Haal het aantal pagina's op
+   		"""
 			return text.find(footer)
 
 	def remove_footer(self, text, footer):
+			"""
+				Verwijder de voettekst
+			"""
 			if footer is not None:
 					text = text.replace(footer, "")
 					return text.strip()
 			return text.strip()
 
 	def remove_footer_and_pagenumbers(self, text,footer, amountpages):
+			"""
+				Verwijder de voettekst en paginanummers
+			"""
 			textLength = len(text)
 			for number in range(amountpages):
 					text = self.remove_footer(text, f"{footer} {str(number + 1)}")
@@ -199,6 +204,9 @@ class Preprocessor:
 			return text.strip()
 
 	def get_doc_specs(self, text):
+			"""
+				Haal de document specificaties op
+			"""
 			pattern = r"(ah-tk-\d{8}-\d{3} ISSN\s*\d{4}\s*-\s*\d{4}\s*’s-Gravenhage\s*\d{4})"
 
 			match = re.search(pattern, text)
@@ -209,16 +217,25 @@ class Preprocessor:
 					return "Desired identifiers not found."
 
 	def normalize_whitespace(self, text):
+			"""
+			normaaliseer de whitespace
+			"""
 			# Replace multiple spaces with a single space
 			return re.sub(r'\s+', ' ', text).strip()
 	
 	def get_heading(self,text):
+		"""
+			Haal de kop op
+		"""
 		result = re.search(r'^(.*?)(?=Vraag 1)', text, re.DOTALL)
 
 		heading = result.group(1).replace("#", "").replace("*", "").strip()
 		cleaned_heading = re.sub(r'^\s*\d+\s*$', '', heading, flags=re.MULTILINE).strip()
 		return cleaned_heading
 	def get_footnotes(self,text):
+		"""
+			haal de voetnoten op
+   	"""
 		footnote_pattern = r'(?m)^\d+\s+.*'
 		footnotes = re.findall(footnote_pattern, text)
 		firstFootNoteNumber = 1
@@ -229,6 +246,9 @@ class Preprocessor:
 					firstFootNoteNumber += 1
 		return actual_footnotes
 	def clean_text_MD(self, text):
+		"""
+		Maak de tekst schoon
+		"""
 		# Remove metadata
 		text = re.sub(r'^\s*\d+\s*$', '', text, flags=re.MULTILINE)
 		# Remove empty lines
