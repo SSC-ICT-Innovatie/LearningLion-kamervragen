@@ -123,12 +123,6 @@ Genereer altijd in het nederlands!
 
 
         filename = None
-        if ',' in model:
-            # als het model een , bevat dan wordt deze gesplitst (dit was nodig voor de guff mogelijkheid)
-            model = model.split(',')
-            filename = model[1]
-            model = model[0]
-
         # Roep de inferentie aan
         AIresponse = infer_run_local(
             data["prompt"], files=fetchedFiles, systemPrompt=systemPrompt, LLM=model, filename=filename, noOllama=noOllama

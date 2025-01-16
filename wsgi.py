@@ -89,15 +89,16 @@ class Specialty(Enum):
     """
     KamerVragen = 1
 # ondersteunde LLM modellen
-LLMModels = [
-    "Open-Orca/Mistral-7B-OpenOrca",
-    "BramVanroy/fietje-2-chat",
-    "BramVanroy/GEITje-7B-ultra",
-    "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed",
-    "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed",
-    "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-q5_k_m.gguf",
-    "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-f16.gguf",
-]
+# 
+# LLMModels = [
+#     "Open-Orca/Mistral-7B-OpenOrca",
+#     "BramVanroy/fietje-2-chat",
+#     "BramVanroy/GEITje-7B-ultra",
+#     "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-4bit-smashed",
+#     "PrunaAI/BramVanroy-GEITje-7B-ultra-bnb-8bit-smashed",
+#     "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-q5_k_m.gguf",
+#     "BramVanroy/GEITje-7B-ultra-GGUF,geitje-7b-ultra-f16.gguf",
+# ]
 
 # De verschillende datascopes
 datascopes = [
@@ -115,12 +116,12 @@ def doesSpecialtyExist(name: str) -> bool:
 def specialties():
     return jsonify([specialty.name for specialty in Specialty])
 # Check of het LLM model bestaat in de lijst van ondersteunde modellen
-def doesLLMModelExist(name: str) -> bool:
-    return name in LLMModels
-# De LLM modellen route
-@app.route('/llmmodels', methods=['GET'])
-def llmmodels():
-    return jsonify(LLMModels)
+# def doesLLMModelExist(name: str) -> bool:
+#     return name in LLMModels
+# # De LLM modellen route
+# @app.route('/llmmodels', methods=['GET'])
+# def llmmodels():
+#     return jsonify(LLMModels)
 # De datascopes route
 @app.route('/datascopes', methods=['GET'])
 def GetDatascopes():
